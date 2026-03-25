@@ -378,7 +378,7 @@ function ReviewWorkspace({ annotation, userId, onBack }) {
 
           <div className="review-section">
             <h4>⚠️ Loại lỗi (khi từ chối)</h4>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', maxHeight: '200px', overflowY: 'auto', paddingRight: '8px' }}>
               {ERROR_CATEGORY_OPTIONS.map(option => (
                 <label key={option.id} style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', cursor: 'pointer', padding: '10px', borderRadius: '6px', background: errorCategories.includes(option.id) ? '#dbeafe' : '#f9fafb', border: errorCategories.includes(option.id) ? '1px solid #60a5fa' : '1px solid #e5e7eb', transition: 'all 0.2s' }}>
                   <input
@@ -386,7 +386,7 @@ function ReviewWorkspace({ annotation, userId, onBack }) {
                     checked={errorCategories.includes(option.id)}
                     onChange={() => toggleErrorCategory(option.id)}
                     disabled={submitting}
-                    style={{ marginTop: '3px', cursor: 'pointer' }}
+                    style={{ marginTop: '3px', cursor: 'pointer', flexShrink: 0 }}
                   />
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontWeight: '500', color: '#111827', fontSize: '14px' }}>{option.label}</div>

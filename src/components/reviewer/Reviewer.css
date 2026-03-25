@@ -234,6 +234,9 @@
   display: flex;
   flex-direction: column;
   gap: 16px;
+  max-height: calc(100vh - 140px);
+  overflow-y: auto;
+  padding-right: 8px;
 }
 
 .review-section {
