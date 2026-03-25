@@ -3,10 +3,29 @@ import { getReviewDetailAPI, submitDecisionAPI } from '../../api';
 
 function ReviewWorkspace({ annotation, userId, onBack }) {
   const [comment, setComment] = useState('');
+  const [errorCategories, setErrorCategories] = useState([]);
   const [detailData, setDetailData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const canvasRef = useRef(null);
+
+  const ERROR_CATEGORY_OPTIONS = [
+    { id: 'wrong_label', label: '❌ Nhãn sai', description: 'Label không chính xác' },
+    { id: 'missing_annotation', label: '⚠️ Annotation thiếu', description: 'Thiếu đối tượng cần gán nhãn' },
+    { id: 'incorrect_coordinates', label: '📍 Tọa độ sai', description: 'Tọa độ không chính xác' },
+    { id: 'multiple_objects_missed', label: '🔍 Bỏ sót nhiều đối tượng', description: 'Bỏ sót nhiều đối tượng' },
+    { id: 'extra_objects', label: '➕ Đối tượng thừa', description: 'Gán nhãn cho đối tượng không cần thiết' },
+    { id: 'object_quality', label: '🎯 Chất lượng đối tượng', description: 'Chất lượng annotation không tốt' },
+    { id: 'other', label: '📝 Khác', description: 'Lý do khác' }
+  ];
+
+  const toggleErrorCategory = (categoryId) => {
+    setErrorCategories(prev => 
+      prev.includes(categoryId) 
+        ? prev.filter(c => c !== categoryId)
+        : [...prev, categoryId]
+    );
+  };
 
   const drawAnnotations = useCallback(() => {
     if (!canvasRef.current || !detailData) {
@@ -204,6 +223,11 @@ function ReviewWorkspace({ annotation, userId, onBack }) {
       alert('Vui lòng nhập lý do cần chỉnh sửa (bắt buộc)');
       return;
     }
+
+    if (errorCategories.length === 0) {
+      alert('Vui lòng chọn ít nhất một loại lỗi');
+      return;
+    }
     
     if (!detailData?.annotationId) return;
     
@@ -218,7 +242,7 @@ function ReviewWorkspace({ annotation, userId, onBack }) {
         decision: 'NeedsRework',
         reviewer_comment: comment.trim(),
         reviewer_notes: comment.trim(),
-        error_categories: ['Other']
+        error_categories: errorCategories
       };
       
       const response = await submitDecisionAPI(decisionData, token);
@@ -340,14 +364,41 @@ function ReviewWorkspace({ annotation, userId, onBack }) {
           )}
 
           <div className="review-section">
-            <h4>💬 Phản hồi</h4>
+            <h4>💬 Bình luận</h4>
             <textarea
               className="feedback-textarea"
-              placeholder="Nhập phản hồi, ghi chú hoặc lý do từ chối..."
+              placeholder="Nhập bình luận hoặc ghi chú..."
               value={comment}
               onChange={(e) => setComment(e.target.value)}
               disabled={submitting}
+              style={{ minHeight: '100px', padding: '10px', fontFamily: 'inherit' }}
             />
+          </div>
+
+          <div className="review-section">
+            <h4>⚠️ Loại lỗi (khi từ chối)</h4>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+              {ERROR_CATEGORY_OPTIONS.map(option => (
+                <label key={option.id} style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', cursor: 'pointer', padding: '10px', borderRadius: '6px', background: errorCategories.includes(option.id) ? '#dbeafe' : '#f9fafb', border: errorCategories.includes(option.id) ? '1px solid #60a5fa' : '1px solid #e5e7eb', transition: 'all 0.2s' }}>
+                  <input
+                    type="checkbox"
+                    checked={errorCategories.includes(option.id)}
+                    onChange={() => toggleErrorCategory(option.id)}
+                    disabled={submitting}
+                    style={{ marginTop: '3px', cursor: 'pointer' }}
+                  />
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontWeight: '500', color: '#111827', fontSize: '14px' }}>{option.label}</div>
+                    <div style={{ fontSize: '12px', color: '#6b7280', marginTop: '2px' }}>{option.description}</div>
+                  </div>
+                </label>
+              ))}
+            </div>
+            {errorCategories.length > 0 && (
+              <div style={{ marginTop: '12px', padding: '10px', background: '#dcfce7', border: '1px solid #86efac', borderRadius: '6px', fontSize: '13px', color: '#166534' }}>
+                ✓ Đã chọn: {errorCategories.map(cat => ERROR_CATEGORY_OPTIONS.find(o => o.id === cat)?.label).join(', ')}
+              </div>
+            )}
           </div>
 
           <div className="review-decision">
