@@ -17,7 +17,8 @@ function TaskList({ userId, onStartAnnotation }) {
       if (!token) throw new Error('No authentication token');
 
       const response = await getAssignedTasksAPI(token);
-      const tasksData = response.data || response;
+      // Extract tasks from API response where data is an array
+      const tasksData = response.data || [];
       setTasks(Array.isArray(tasksData) ? tasksData : []);
       setError('');
     } catch (err) {

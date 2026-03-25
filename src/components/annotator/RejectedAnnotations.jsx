@@ -16,7 +16,7 @@ function RejectedAnnotations({ userId, onRetry }) {
         
         // Get all assigned tasks
         const tasksResponse = await getAssignedTasksAPI(token);
-        const tasks = tasksResponse.items || tasksResponse.data || [];
+        const tasks = tasksResponse.data || [];
         
         // Fetch feedback for each task
         const rejectedList = [];
