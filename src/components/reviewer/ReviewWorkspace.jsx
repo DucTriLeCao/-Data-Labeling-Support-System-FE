@@ -241,9 +241,8 @@ function ReviewWorkspace({ annotation, userId, onBack }) {
         annotationId: detailData.annotationId,
         reviewer_id: userId,
         decision: 'NeedsRework',
-        reviewer_comment: comment.trim(),
-        reviewer_notes: comment.trim(),
-        error_categories: errorCategories
+        comment: comment.trim(),
+        errorCategories: errorCategories
       };
       
       const response = await submitDecisionAPI(decisionData, token);
