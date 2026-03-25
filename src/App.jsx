@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import Login from './components/Login';
 import ManagerLayout from './components/Manager/ManagerLayout';
 import AnnotatorLayout from './components/annotator/AnnotatorLayout';
-import ReviewerLayout from './components/Reviewer/ReviewerLayout';
+import ReviewerLayout from './components/reviewer/ReviewerLayout';
 import AdminLayout from './components/Admin/AdminLayout';
 
 function App() {
