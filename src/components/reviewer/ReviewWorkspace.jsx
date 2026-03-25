@@ -186,7 +186,9 @@ function ReviewWorkspace({ annotation, userId, onBack }) {
         reviewer_notes: comment || ''
       };
       
-      await submitDecisionAPI(decisionData, token);
+      const response = await submitDecisionAPI(decisionData, token);
+      const reviewResult = response.data || response;
+      
       alert('Đã chấp nhận annotation!');
       onBack();
     } catch (err) {
@@ -219,7 +221,10 @@ function ReviewWorkspace({ annotation, userId, onBack }) {
         error_categories: ['Other']
       };
       
-      await submitDecisionAPI(decisionData, token);
+      const response = await submitDecisionAPI(decisionData, token);
+      // API returns: { reviewId, annotationId, reviewStatus, comment, errorCategories, reviewerName, reviewedAt, ... }
+      const reviewResult = response.data || response;
+      
       alert('Đã yêu cầu chỉnh sửa!');
       onBack();
     } catch (err) {
