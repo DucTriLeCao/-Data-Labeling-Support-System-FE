@@ -37,7 +37,7 @@ function ReviewWorkspace({ annotation, userId, onBack }) {
       if (!svg) {
         svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
         svg.setAttribute('style', 'position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none;');
-        svg.setAttribute('viewBox', '0 0 1000 1000');
+        // Remove viewBox to use actual pixel coordinates like AnnotationWorkspace
         canvas.appendChild(svg);
       }
       
@@ -47,10 +47,10 @@ function ReviewWorkspace({ annotation, userId, onBack }) {
       annotations.forEach((ann) => {
         if (ann.type === 'bbox' || ann.type === 'bounding_box') {
           const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-          rect.setAttribute('x', ann.x);
-          rect.setAttribute('y', ann.y);
-          rect.setAttribute('width', ann.width);
-          rect.setAttribute('height', ann.height);
+          rect.setAttribute('x', String(ann.x));
+          rect.setAttribute('y', String(ann.y));
+          rect.setAttribute('width', String(ann.width));
+          rect.setAttribute('height', String(ann.height));
           rect.setAttribute('fill', 'rgba(5, 150, 105, 0.15)');
           rect.setAttribute('stroke', '#059669');
           rect.setAttribute('stroke-width', '2');
@@ -58,17 +58,17 @@ function ReviewWorkspace({ annotation, userId, onBack }) {
           
           const labelText = ann.label_name || ann.labelName || 'Label';
           const bg = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-          bg.setAttribute('x', ann.x);
-          bg.setAttribute('y', ann.y - 20);
-          bg.setAttribute('width', (labelText.length || 10) * 8 + 12);
+          bg.setAttribute('x', String(ann.x));
+          bg.setAttribute('y', String(ann.y - 20));
+          bg.setAttribute('width', String((labelText.length || 10) * 8 + 12));
           bg.setAttribute('height', '18');
           bg.setAttribute('fill', '#059669');
           bg.setAttribute('rx', '4');
           svg.appendChild(bg);
           
           const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-          text.setAttribute('x', ann.x + 6);
-          text.setAttribute('y', ann.y - 6);
+          text.setAttribute('x', String(ann.x + 6));
+          text.setAttribute('y', String(ann.y - 6));
           text.setAttribute('fill', 'white');
           text.setAttribute('font-size', '11');
           text.textContent = labelText;
@@ -77,14 +77,35 @@ function ReviewWorkspace({ annotation, userId, onBack }) {
           const points = ann.points.map(p => `${p.x},${p.y}`).join(' ');
           const poly = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
           poly.setAttribute('points', points);
-          poly.setAttribute('fill', 'rgba(5, 150, 105, 0.15)');
-          poly.setAttribute('stroke', '#059669');
+          poly.setAttribute('fill', 'rgba(139, 92, 246, 0.15)');
+          poly.setAttribute('stroke', '#8b5cf6');
           poly.setAttribute('stroke-width', '2');
           svg.appendChild(poly);
+          
+          // Add label at first point
+          if (ann.points.length > 0) {
+            const labelText = ann.label_name || ann.labelName || 'Label';
+            const bg = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+            bg.setAttribute('x', String(ann.points[0].x));
+            bg.setAttribute('y', String(ann.points[0].y - 20));
+            bg.setAttribute('width', String((labelText.length || 10) * 8 + 12));
+            bg.setAttribute('height', '18');
+            bg.setAttribute('fill', '#8b5cf6');
+            bg.setAttribute('rx', '4');
+            svg.appendChild(bg);
+            
+            const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            text.setAttribute('x', String(ann.points[0].x + 6));
+            text.setAttribute('y', String(ann.points[0].y - 6));
+            text.setAttribute('fill', 'white');
+            text.setAttribute('font-size', '11');
+            text.textContent = labelText;
+            svg.appendChild(text);
+          }
         } else if (ann.type === 'point') {
           const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-          circle.setAttribute('cx', ann.x);
-          circle.setAttribute('cy', ann.y);
+          circle.setAttribute('cx', String(ann.x));
+          circle.setAttribute('cy', String(ann.y));
           circle.setAttribute('r', '5');
           circle.setAttribute('fill', 'rgba(5, 150, 105, 0.3)');
           circle.setAttribute('stroke', '#059669');
@@ -93,8 +114,8 @@ function ReviewWorkspace({ annotation, userId, onBack }) {
           
           const labelText = ann.label_name || ann.labelName || 'Point';
           const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-          text.setAttribute('x', parseFloat(ann.x) + 10);
-          text.setAttribute('y', parseFloat(ann.y) - 10);
+          text.setAttribute('x', String(parseFloat(ann.x) + 10));
+          text.setAttribute('y', String(parseFloat(ann.y) - 10));
           text.setAttribute('fill', '#059669');
           text.setAttribute('font-size', '12');
           text.setAttribute('font-weight', 'bold');
