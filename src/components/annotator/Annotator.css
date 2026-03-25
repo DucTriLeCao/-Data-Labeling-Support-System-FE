@@ -1,0 +1,452 @@
+/* ========================= ANNOTATOR LAYOUT ========================= */
+.annotator-layout {
+  display: flex;
+  min-height: 100vh;
+  background-color: #f3f4f6;
+}
+
+.annotator-sidebar {
+  width: 260px;
+  background: linear-gradient(180deg, #059669 0%, #047857 100%);
+  padding: 20px 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.annotator-sidebar-header {
+  padding: 0 20px 20px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  margin-bottom: 20px;
+}
+
+.annotator-sidebar-header h2 {
+  color: white;
+  font-size: 20px;
+  margin: 0 0 5px 0;
+}
+
+.annotator-sidebar-header p {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 14px;
+  margin: 0;
+}
+
+.annotator-nav {
+  flex: 1;
+}
+
+.annotator-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 20px;
+  color: rgba(255, 255, 255, 0.8);
+  cursor: pointer;
+  transition: all 0.2s;
+  border: none;
+  background: none;
+  width: 100%;
+  text-align: left;
+  font-size: 15px;
+}
+
+.annotator-nav-item:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+}
+
+.annotator-nav-item.active {
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+  border-left: 4px solid white;
+}
+
+.annotator-nav-item .nav-icon {
+  font-size: 20px;
+}
+
+.annotator-logout-btn {
+  margin: 20px;
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 8px;
+  color: white;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.2s;
+}
+
+.annotator-logout-btn:hover {
+  background: rgba(255, 255, 255, 0.25);
+}
+
+.annotator-main {
+  flex: 1;
+  padding: 30px;
+  overflow-y: auto;
+}
+
+.annotator-main h1 {
+  margin: 0 0 24px 0;
+  color: #1f2937;
+  font-size: 28px;
+}
+
+/* ========================= TASK LIST ========================= */
+.task-list-container {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.task-card {
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.task-info {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.task-thumbnail {
+  width: 80px;
+  height: 80px;
+  background: #f3f4f6;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 32px;
+}
+
+.task-details h3 {
+  margin: 0 0 8px 0;
+  color: #1f2937;
+  font-size: 16px;
+}
+
+.task-details p {
+  margin: 0;
+  color: #6b7280;
+  font-size: 14px;
+}
+
+.task-status {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 500;
+  margin-top: 8px;
+}
+
+.task-status.assigned {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.task-status.new {
+  background: #e0e7ff;
+  color: #3730a3;
+}
+
+.task-status.submitted {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.task-actions button {
+  padding: 10px 20px;
+  background: #059669;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background 0.2s;
+}
+
+.task-actions button:hover {
+  background: #047857;
+}
+
+/* ========================= ANNOTATION WORKSPACE ========================= */
+.annotation-workspace {
+  display: grid;
+  grid-template-columns: 1fr 320px;
+  gap: 24px;
+  height: calc(100vh - 140px);
+}
+
+.annotation-canvas-area {
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  display: flex;
+  flex-direction: column;
+}
+
+.canvas-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.canvas-header h3 {
+  margin: 0;
+  color: #1f2937;
+}
+
+.canvas-tools {
+  display: flex;
+  gap: 8px;
+}
+
+.tool-btn {
+  padding: 8px 12px;
+  border: 1px solid #d1d5db;
+  background: white;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.2s;
+}
+
+.tool-btn:hover, .tool-btn.active {
+  background: #059669;
+  color: white;
+  border-color: #059669;
+}
+
+.canvas-display {
+  flex: 1;
+  background: #f9fafb;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.canvas-display .placeholder-image {
+  font-size: 120px;
+}
+
+.annotation-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.panel-section {
+  background: white;
+  border-radius: 12px;
+  padding: 16px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.panel-section h4 {
+  margin: 0 0 12px 0;
+  color: #1f2937;
+  font-size: 15px;
+}
+
+.label-tree {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.label-item {
+  padding: 10px 12px;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.2s;
+}
+
+.label-item:hover {
+  border-color: #059669;
+}
+
+.label-item.selected {
+  background: #d1fae5;
+  border-color: #059669;
+  color: #065f46;
+}
+
+.label-item.child {
+  margin-left: 20px;
+  font-size: 13px;
+}
+
+.annotation-list {
+  max-height: 150px;
+  overflow-y: auto;
+}
+
+.annotation-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px;
+  background: #f9fafb;
+  border-radius: 6px;
+  margin-bottom: 8px;
+  font-size: 13px;
+}
+
+.annotation-item button {
+  background: #ef4444;
+  color: white;
+  border: none;
+  padding: 4px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.submit-section {
+  display: flex;
+  gap: 8px;
+}
+
+.submit-btn {
+  flex: 1;
+  padding: 12px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: opacity 0.2s;
+}
+
+.submit-btn.primary {
+  background: #059669;
+  color: white;
+}
+
+.submit-btn.secondary {
+  background: #f3f4f6;
+  color: #374151;
+}
+
+.submit-btn:hover {
+  opacity: 0.9;
+}
+
+/* ========================= MY ANNOTATIONS ========================= */
+.annotations-table {
+  width: 100%;
+  background: white;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.annotations-table table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.annotations-table th {
+  background: #f9fafb;
+  padding: 14px 16px;
+  text-align: left;
+  font-weight: 600;
+  color: #374151;
+  font-size: 14px;
+}
+
+.annotations-table td {
+  padding: 14px 16px;
+  border-top: 1px solid #e5e7eb;
+  font-size: 14px;
+  color: #1f2937;
+}
+
+.annotation-status {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.annotation-status.submitted {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.annotation-status.approved {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.annotation-status.rejected {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.feedback-cell {
+  max-width: 200px;
+}
+
+.feedback-text {
+  font-size: 13px;
+  color: #059669;
+}
+
+.no-feedback {
+  font-size: 13px;
+  color: #9ca3af;
+  font-style: italic;
+}
+
+/* ========================= EMPTY STATE ========================= */
+.empty-state {
+  text-align: center;
+  padding: 60px 20px;
+  color: #6b7280;
+}
+
+.empty-state .empty-icon {
+  font-size: 64px;
+  margin-bottom: 16px;
+}
+
+.empty-state h3 {
+  margin: 0 0 8px 0;
+  color: #374151;
+}
+
+.empty-state p {
+  margin: 0;
+}
+
+/* ========================= GUIDELINES PANEL ========================= */
+.guidelines-content {
+  background: #f9fafb;
+  padding: 12px;
+  border-radius: 6px;
+  font-size: 13px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  max-height: 120px;
+  overflow-y: auto;
+}

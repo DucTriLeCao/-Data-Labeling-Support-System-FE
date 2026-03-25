@@ -1,0 +1,351 @@
+import { useState, useEffect, useRef, useCallback } from 'react';
+import { getReviewDetailAPI, submitDecisionAPI } from '../../api';
+
+function ReviewWorkspace({ annotation, userId, onBack }) {
+  const [comment, setComment] = useState('');
+  const [detailData, setDetailData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
+  const canvasRef = useRef(null);
+
+  const drawAnnotations = useCallback(() => {
+    if (!canvasRef.current || !detailData) {
+      return;
+    }
+    
+    try {
+      let coordData;
+      if (typeof detailData.coordinateData === 'string') {
+        coordData = JSON.parse(detailData.coordinateData);
+      } else {
+        coordData = detailData.coordinateData;
+      }
+      
+      // Handle both wrapped and unwrapped formats
+      let annotations;
+      if (coordData.annotations) {
+        annotations = coordData.annotations;
+      } else if (Array.isArray(coordData)) {
+        annotations = coordData;
+      } else {
+        annotations = [coordData];
+      }
+      
+      const canvas = canvasRef.current;
+      
+      let svg = canvas.querySelector('svg');
+      if (!svg) {
+        svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        svg.setAttribute('style', 'position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none;');
+        svg.setAttribute('viewBox', '0 0 1000 1000');
+        canvas.appendChild(svg);
+      }
+      
+      // Clear existing
+      while (svg.firstChild) svg.removeChild(svg.firstChild);
+      
+      annotations.forEach((ann) => {
+        if (ann.type === 'bbox' || ann.type === 'bounding_box') {
+          const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+          rect.setAttribute('x', ann.x);
+          rect.setAttribute('y', ann.y);
+          rect.setAttribute('width', ann.width);
+          rect.setAttribute('height', ann.height);
+          rect.setAttribute('fill', 'rgba(5, 150, 105, 0.15)');
+          rect.setAttribute('stroke', '#059669');
+          rect.setAttribute('stroke-width', '2');
+          svg.appendChild(rect);
+          
+          const labelText = ann.label_name || ann.labelName || 'Label';
+          const bg = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+          bg.setAttribute('x', ann.x);
+          bg.setAttribute('y', ann.y - 20);
+          bg.setAttribute('width', (labelText.length || 10) * 8 + 12);
+          bg.setAttribute('height', '18');
+          bg.setAttribute('fill', '#059669');
+          bg.setAttribute('rx', '4');
+          svg.appendChild(bg);
+          
+          const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+          text.setAttribute('x', ann.x + 6);
+          text.setAttribute('y', ann.y - 6);
+          text.setAttribute('fill', 'white');
+          text.setAttribute('font-size', '11');
+          text.textContent = labelText;
+          svg.appendChild(text);
+        } else if (ann.type === 'polygon' && ann.points) {
+          const points = ann.points.map(p => `${p.x},${p.y}`).join(' ');
+          const poly = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+          poly.setAttribute('points', points);
+          poly.setAttribute('fill', 'rgba(5, 150, 105, 0.15)');
+          poly.setAttribute('stroke', '#059669');
+          poly.setAttribute('stroke-width', '2');
+          svg.appendChild(poly);
+        } else if (ann.type === 'point') {
+          const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+          circle.setAttribute('cx', ann.x);
+          circle.setAttribute('cy', ann.y);
+          circle.setAttribute('r', '5');
+          circle.setAttribute('fill', 'rgba(5, 150, 105, 0.3)');
+          circle.setAttribute('stroke', '#059669');
+          circle.setAttribute('stroke-width', '2');
+          svg.appendChild(circle);
+          
+          const labelText = ann.label_name || ann.labelName || 'Point';
+          const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+          text.setAttribute('x', parseFloat(ann.x) + 10);
+          text.setAttribute('y', parseFloat(ann.y) - 10);
+          text.setAttribute('fill', '#059669');
+          text.setAttribute('font-size', '12');
+          text.setAttribute('font-weight', 'bold');
+          text.textContent = labelText;
+          svg.appendChild(text);
+        }
+      });
+      
+      if (!canvas.contains(svg)) {
+        canvas.appendChild(svg);
+      }
+    } catch (err) {
+      console.error('Error drawing annotations:', err);
+    }
+  }, [detailData]);
+
+  useEffect(() => {
+    if (!annotation?.annotationId) return;
+    
+    const loadReviewDetail = async () => {
+      try {
+        setLoading(true);
+        const token = localStorage.getItem('token');
+        if (!token) throw new Error('No token');
+        
+        const response = await getReviewDetailAPI(annotation.annotationId, token);
+        const data = response.data || response;
+        setDetailData(data);
+      } catch (err) {
+        console.error('Error loading review detail:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    loadReviewDetail();
+  }, [annotation?.annotationId]);
+
+  useEffect(() => {
+    if (detailData?.coordinateData) {
+      drawAnnotations();
+    }
+  }, [detailData, drawAnnotations]);
+
+  const getImageUrl = () => {
+    if (detailData?.dataContent) {
+      if (detailData.dataContent.startsWith('/')) {
+        return `https://localhost:7076${detailData.dataContent}`;
+      }
+      return detailData.dataContent;
+    }
+    return '';
+  };
+
+  const handleApprove = async () => {
+    if (!detailData?.annotationId) return;
+    
+    try {
+      setSubmitting(true);
+      const token = localStorage.getItem('token');
+      if (!token) throw new Error('No token');
+      
+      const decisionData = {
+        annotationId: detailData.annotationId,
+        reviewer_id: userId,
+        decision: 'Approved',
+        reviewer_comment: comment || '',
+        reviewer_notes: comment || ''
+      };
+      
+      await submitDecisionAPI(decisionData, token);
+      alert('Đã chấp nhận annotation!');
+      onBack();
+    } catch (err) {
+      console.error('Error approving:', err);
+      alert('Lỗi: ' + err.message);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleReject = async () => {
+    if (!comment.trim()) {
+      alert('Vui lòng nhập lý do cần chỉnh sửa (bắt buộc)');
+      return;
+    }
+    
+    if (!detailData?.annotationId) return;
+    
+    try {
+      setSubmitting(true);
+      const token = localStorage.getItem('token');
+      if (!token) throw new Error('No token');
+      
+      const decisionData = {
+        annotationId: detailData.annotationId,
+        reviewer_id: userId,
+        decision: 'NeedsRework',
+        reviewer_comment: comment.trim(),
+        reviewer_notes: comment.trim(),
+        error_categories: ['Other']
+      };
+      
+      await submitDecisionAPI(decisionData, token);
+      alert('Đã yêu cầu chỉnh sửa!');
+      onBack();
+    } catch (err) {
+      console.error('Error rejecting:', err);
+      alert('Lỗi: ' + err.message);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  if (!annotation) {
+    return (
+      <>
+        <h1>🔍 Không gian duyệt</h1>
+        <div className="reviewer-empty-state">
+          <div className="empty-icon">📭</div>
+          <h3>Chưa chọn annotation</h3>
+          <p>Vui lòng chọn một annotation từ danh sách chờ duyệt</p>
+          <button 
+            onClick={onBack}
+            style={{ marginTop: '16px', padding: '10px 20px', background: '#dc2626', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer' }}
+          >
+            Quay lại danh sách
+          </button>
+        </div>
+      </>
+    );
+  }
+
+  if (loading) {
+    return <div className="loading">Đang tải chi tiết duyệt...</div>;
+  }
+
+  if (!detailData) {
+    return <div className="error-message">Lỗi tải chi tiết annotation</div>;
+  }
+
+  const getImageIcon = (content) => {
+    if (!content) return '🖼️';
+    if (content.includes('lion')) return '🦁';
+    if (content.includes('elephant')) return '🐘';
+    if (content.includes('tiger')) return '🐯';
+    if (content.includes('zebra')) return '🦓';
+    return '🖼️';
+  };
+
+  return (
+    <>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+        <h1 style={{ margin: 0 }}>🔍 Không gian duyệt</h1>
+        <button 
+          onClick={onBack}
+          disabled={submitting}
+          style={{ padding: '8px 16px', background: '#f3f4f6', border: 'none', borderRadius: '6px', cursor: 'pointer', opacity: submitting ? 0.5 : 1 }}
+        >
+          ← Quay lại
+        </button>
+      </div>
+
+      <div className="review-workspace">
+        <div className="review-canvas-area">
+          <div className="review-canvas-header">
+            <h3>{detailData.dataContent?.split('/').pop() || `Item ${detailData.dataItemId}`}</h3>
+            <div className="annotator-info">
+              <div className="avatar">👤</div>
+              <span>Người gán nhãn: <strong>{detailData.annotatorName || 'Unknown'}</strong></span>
+            </div>
+          </div>
+          <div className="review-canvas-display" ref={canvasRef} style={{ position: 'relative', overflow: 'hidden' }}>
+            <img 
+              src={getImageUrl()} 
+              alt="annotation" 
+              style={{ width: '100%', height: 'auto', display: 'block' }}
+            />
+          </div>
+        </div>
+
+        <div className="review-panel">
+          <div className="review-section">
+            <h4>📋 Hướng dẫn gán nhãn</h4>
+            <div style={{ background: '#f9fafb', padding: '12px', borderRadius: '6px', fontSize: '13px', lineHeight: 1.6, whiteSpace: 'pre-wrap', maxHeight: '100px', overflowY: 'auto' }}>
+              {detailData.projectInstruction || 'Chưa có hướng dẫn'}
+            </div>
+          </div>
+
+          <div className="review-section">
+            <h4>🏷️ Chi tiết Annotation</h4>
+            <div className="annotation-detail-item">
+              <div className="label">{detailData.labelValue}</div>
+              <div className="type">Loại: {detailData.annotationType}</div>
+              <div style={{ marginTop: '12px', fontSize: '13px', color: '#6b7280' }}>
+                <div>📅 Ngày gán: {new Date(detailData.submittedAt).toLocaleDateString('vi-VN')}</div>
+                <div>👤 Người gán: {detailData.annotatorName}</div>
+                <div>📊 Project: {detailData.projectName}</div>
+                <div>📁 Dataset: {detailData.datasetName}</div>
+              </div>
+            </div>
+          </div>
+
+          {detailData.validation && (
+            <div className="review-section">
+              <h4>✔️ Kiểm tra</h4>
+              <div style={{ fontSize: '13px', lineHeight: 1.8 }}>
+                <div>Label hợp lệ: {detailData.validation.labelExistsInProject ? '✅' : '❌'}</div>
+                <div>Tọa độ hợp lệ: {detailData.validation.isCoordinateJsonValid ? '✅' : '❌'}</div>
+                {detailData.validation.issues?.length > 0 && (
+                  <div style={{ marginTop: '8px', color: '#dc2626' }}>
+                    Vấn đề: {detailData.validation.issues.join(', ')}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          <div className="review-section">
+            <h4>💬 Phản hồi</h4>
+            <textarea
+              className="feedback-textarea"
+              placeholder="Nhập phản hồi, ghi chú hoặc lý do từ chối..."
+              value={comment}
+              onChange={(e) => setComment(e.target.value)}
+              disabled={submitting}
+            />
+          </div>
+
+          <div className="review-decision">
+            <button 
+              className="decision-btn approve" 
+              onClick={handleApprove}
+              disabled={submitting}
+              style={{ opacity: submitting ? 0.5 : 1 }}
+            >
+              ✅ Chấp nhận
+            </button>
+            <button 
+              className="decision-btn reject" 
+              onClick={handleReject}
+              disabled={submitting}
+              style={{ opacity: submitting ? 0.5 : 1 }}
+            >
+              ❌ Từ chối
+            </button>
+          </div>
+        </div>
+      </div>
+    </>
+  );
+}
+
+export default ReviewWorkspace;
