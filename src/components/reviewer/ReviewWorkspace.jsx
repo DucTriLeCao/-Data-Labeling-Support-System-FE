@@ -180,11 +180,12 @@ function ReviewWorkspace({ annotation, userId, onBack }) {
   }, [detailData, drawAnnotations]);
 
   const getImageUrl = () => {
-    if (detailData?.dataContent) {
-      if (detailData.dataContent.startsWith('/')) {
-        return `https://localhost:7076${detailData.dataContent}`;
+    if (detailData?.dataContent || detailData?.DataContent) {
+      const content = detailData.dataContent || detailData.DataContent;
+      if (content.startsWith('/')) {
+        return `https://localhost:7076${content}`;
       }
-      return detailData.dataContent;
+      return content;
     }
     return '';
   };
@@ -311,10 +312,10 @@ function ReviewWorkspace({ annotation, userId, onBack }) {
       <div className="review-workspace">
         <div className="review-canvas-area">
           <div className="review-canvas-header">
-            <h3>{detailData.dataContent?.split('/').pop() || `Item ${detailData.dataItemId}`}</h3>
+            <h3>{(detailData.dataContent || detailData.DataContent)?.split('/').pop() || `Item ${detailData.dataItemId || detailData.DataItemId}`}</h3>
             <div className="annotator-info">
               <div className="avatar">👤</div>
-              <span>Người gán nhãn: <strong>{detailData.annotatorName || 'Unknown'}</strong></span>
+              <span>Người gán nhãn: <strong>{detailData.annotatorName || detailData.AnnotatorName || 'Unknown'}</strong></span>
             </div>
           </div>
           <div className="review-canvas-display" ref={canvasRef} style={{ position: 'relative', overflow: 'hidden' }}>
@@ -330,20 +331,20 @@ function ReviewWorkspace({ annotation, userId, onBack }) {
           <div className="review-section">
             <h4>📋 Hướng dẫn gán nhãn</h4>
             <div style={{ background: '#f9fafb', padding: '12px', borderRadius: '6px', fontSize: '13px', lineHeight: 1.6, whiteSpace: 'pre-wrap', maxHeight: '100px', overflowY: 'auto' }}>
-              {detailData.projectInstruction || 'Chưa có hướng dẫn'}
+              {detailData.projectInstruction || detailData.ProjectInstruction || 'Chưa có hướng dẫn'}
             </div>
           </div>
 
           <div className="review-section">
             <h4>🏷️ Chi tiết Annotation</h4>
             <div className="annotation-detail-item">
-              <div className="label">{detailData.labelValue}</div>
-              <div className="type">Loại: {detailData.annotationType}</div>
+              <div className="label">{detailData.labelValue || detailData.LabelValue || 'N/A'}</div>
+              <div className="type">Loại: {detailData.annotationType || detailData.AnnotationType || 'N/A'}</div>
               <div style={{ marginTop: '12px', fontSize: '13px', color: '#6b7280' }}>
-                <div>📅 Ngày gán: {new Date(detailData.submittedAt).toLocaleDateString('vi-VN')}</div>
-                <div>👤 Người gán: {detailData.annotatorName}</div>
-                <div>📊 Project: {detailData.projectName}</div>
-                <div>📁 Dataset: {detailData.datasetName}</div>
+                <div>📅 Ngày gán: {new Date(detailData.submittedAt || detailData.SubmittedAt).toLocaleDateString('vi-VN')}</div>
+                <div>👤 Người gán: {detailData.annotatorName || detailData.AnnotatorName || 'Unknown'}</div>
+                <div>📊 Project: {detailData.projectName || detailData.ProjectName || 'N/A'}</div>
+                <div>📁 Dataset: {detailData.datasetName || detailData.DatasetName || 'N/A'}</div>
               </div>
             </div>
           </div>
@@ -352,11 +353,11 @@ function ReviewWorkspace({ annotation, userId, onBack }) {
             <div className="review-section">
               <h4>✔️ Kiểm tra</h4>
               <div style={{ fontSize: '13px', lineHeight: 1.8 }}>
-                <div>Label hợp lệ: {detailData.validation.labelExistsInProject ? '✅' : '❌'}</div>
-                <div>Tọa độ hợp lệ: {detailData.validation.isCoordinateJsonValid ? '✅' : '❌'}</div>
-                {detailData.validation.issues?.length > 0 && (
+                <div>Label hợp lệ: {(detailData.validation.labelExistsInProject || detailData.validation.LabelExistsInProject) ? '✅' : '❌'}</div>
+                <div>Tọa độ hợp lệ: {(detailData.validation.isCoordinateJsonValid || detailData.validation.IsCoordinateJsonValid) ? '✅' : '❌'}</div>
+                {(detailData.validation.issues || detailData.validation.Issues)?.length > 0 && (
                   <div style={{ marginTop: '8px', color: '#dc2626' }}>
-                    Vấn đề: {detailData.validation.issues.join(', ')}
+                    Vấn đề: {(detailData.validation.issues || detailData.validation.Issues).join(', ')}
                   </div>
                 )}
               </div>
