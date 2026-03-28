@@ -214,8 +214,8 @@ export const getReviewerHistoryAPI = async (token, pageNumber = 1, pageSize = 20
 
 // ==================== ADMIN ENDPOINTS ====================
 
-export const getUsersAPI = async (token) => {
-  const response = await fetch(`${API_BASE_URL}/admin/users`, {
+export const getUsersAPI = async (token, pageNumber = 1, pageSize = 20) => {
+  const response = await fetch(`${API_BASE_URL}/admin/users?pageNumber=${pageNumber}&pageSize=${pageSize}`, {
     method: 'GET',
     headers: { 'Authorization': `Bearer ${token}` }
   });
@@ -293,8 +293,31 @@ export const deleteUserAPI = async (id, token) => {
   }
 };
 
-export const getActivityLogsAPI = async (token) => {
-  const response = await fetch(`${API_BASE_URL}/admin/activity-logs`, {
+export const bulkDeactivateUsersAPI = async (userIds, token) => {
+  const response = await fetch(`${API_BASE_URL}/admin/users/bulk-deactivate`, {
+    method: 'DELETE',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`
+    },
+    body: JSON.stringify(userIds)
+  });
+  
+  if (!response.ok) {
+    const data = await response.json().catch(() => ({}));
+    throw new Error(data.message || 'Failed to deactivate users');
+  }
+  
+  try {
+    const data = await response.json();
+    return data;
+  } catch (e) {
+    return { success: true };
+  }
+};
+
+export const getActivityLogsAPI = async (token, pageNumber = 1, pageSize = 20) => {
+  const response = await fetch(`${API_BASE_URL}/admin/activity-logs?pageNumber=${pageNumber}&pageSize=${pageSize}`, {
     method: 'GET',
     headers: { 'Authorization': `Bearer ${token}` }
   });

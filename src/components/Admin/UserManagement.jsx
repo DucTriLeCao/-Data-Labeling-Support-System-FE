@@ -1,14 +1,19 @@
 import { useState, useEffect } from 'react';
-import { getUsersAPI, createUserAPI, updateUserAPI, deleteUserAPI } from '../../api';
+import { getUsersAPI, createUserAPI, updateUserAPI, deleteUserAPI, bulkDeactivateUsersAPI } from '../../api';
 
 function UserManagement() {
   const [users, setUsers] = useState([]);
+  const [selectedUserIds, setSelectedUserIds] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [showModal, setShowModal] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
   const [isSaving, setIsSaving] = useState(false);
   const [formError, setFormError] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(20);
+  const [totalCount, setTotalCount] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
   const [formData, setFormData] = useState({
     username: '',
     email: '',
@@ -23,19 +28,20 @@ function UserManagement() {
     setFormError('');
   };
 
-  const fetchUsers = async () => {
+  const fetchUsers = async (pageNumber = 1) => {
     try {
       setLoading(true);
       const token = localStorage.getItem('token');
       if (!token) throw new Error('No authentication token');
 
-      const response = await getUsersAPI(token);
-      const usersData = response.items || response.data || response || [];
+      const response = await getUsersAPI(token, pageNumber, pageSize);
+      const paginatedData = response || {};
+      const usersData = paginatedData.items || [];
       
-      // API returns correct format - no normalization needed
-      const normalizedUsers = usersData;
-      
-      setUsers(normalizedUsers);
+      setUsers(usersData);
+      setTotalCount(paginatedData.totalCount || 0);
+      setTotalPages(paginatedData.totalPages || 0);
+      setCurrentPage(paginatedData.pageNumber || pageNumber);
       setError('');
     } catch (err) {
       console.error('Error fetching users:', err);
@@ -47,8 +53,8 @@ function UserManagement() {
   };
 
   useEffect(() => {
-    fetchUsers();
-  }, []);
+    fetchUsers(currentPage);
+  }, [currentPage]);
 
   const handleAddUser = () => {
     setEditingUser(null);
@@ -97,6 +103,53 @@ function UserManagement() {
     } catch (err) {
       console.error('Error deleting user:', err);
       setError(`Không thể xóa người dùng: ${err.message}`);
+    }
+  };
+
+  const handleToggleUser = (userId) => {
+    setSelectedUserIds(prev => 
+      prev.includes(userId)
+        ? prev.filter(id => id !== userId)
+        : [...prev, userId]
+    );
+  };
+
+  const handleToggleAllUsers = () => {
+    const activeUserIds = users.filter(u => u.status === 'Active').map(u => u.id);
+    if (selectedUserIds.length === activeUserIds.length) {
+      setSelectedUserIds([]);
+    } else {
+      setSelectedUserIds(activeUserIds);
+    }
+  };
+
+  const handleBulkDeactivate = async () => {
+    if (selectedUserIds.length === 0) {
+      setError('Vui lòng chọn ít nhất một người dùng');
+      return;
+    }
+
+    if (!window.confirm(`Bạn có chắc muốn vô hiệu hóa ${selectedUserIds.length} người dùng đã chọn?`)) {
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) throw new Error('No token');
+
+      await bulkDeactivateUsersAPI(selectedUserIds, token);
+      
+      // Update selected users status to inactive
+      setUsers(users.map(u => 
+        selectedUserIds.includes(u.id)
+          ? { ...u, status: 'Inactive' }
+          : u
+      ));
+      setSelectedUserIds([]);
+      setError('');
+    } catch (err) {
+      console.error('Error bulk deactivating users:', err);
+      setError(`Không thể vô hiệu hóa người dùng: ${err.message}`);
     }
   };
 
@@ -208,22 +261,42 @@ function UserManagement() {
 
   const getAvatarEmoji = (role) => {
     const emojiMap = {
-      'admin': '⚙️',
-      'manager': '📋',
-      'annotator': '🏷️',
-      'reviewer': '🔍'
+      'admin': 'A',
+      'manager': 'M',
+      'annotator': 'An',
+      'reviewer': 'R'
     };
-    return emojiMap[role?.toLowerCase()] || '👤';
+    return emojiMap[role?.toLowerCase()] || 'U';
   };
 
   return (
     <>
       <div className="user-management-header">
-        <h1>👥 Quản lý người dùng</h1>
+        <h1>Quản lý người dùng</h1>
         <button className="add-user-btn" onClick={handleAddUser}>
-          ➕ Thêm người dùng
+          Thêm người dùng
         </button>
       </div>
+
+      {selectedUserIds.length > 0 && (
+        <div className="bulk-action-toolbar">
+          <span className="selected-count">
+            Đã chọn {selectedUserIds.length} người dùng
+          </span>
+          <button 
+            className="bulk-deactivate-btn" 
+            onClick={handleBulkDeactivate}
+          >
+            Vô hiệu hóa {selectedUserIds.length}
+          </button>
+          <button 
+            className="bulk-cancel-btn" 
+            onClick={() => setSelectedUserIds([])}
+          >
+            Hủy chọn
+          </button>
+        </div>
+      )}
 
       {loading && <div className="loading">Đang tải danh sách người dùng...</div>}
       {error && <div className="error">{error}</div>}
@@ -239,6 +312,14 @@ function UserManagement() {
         <table>
           <thead>
             <tr>
+              <th style={{ width: '40px' }}>
+                <input
+                  type="checkbox"
+                  checked={selectedUserIds.length > 0 && selectedUserIds.length === users.filter(u => u.status === 'Active').length}
+                  onChange={handleToggleAllUsers}
+                  className="select-all-checkbox"
+                />
+              </th>
               <th>Người dùng</th>
               <th>Email</th>
               <th>Vai trò</th>
@@ -250,6 +331,14 @@ function UserManagement() {
           <tbody>
             {users.filter(user => user.status === 'Active').map(user => (
               <tr key={user.id}>
+                <td>
+                  <input
+                    type="checkbox"
+                    checked={selectedUserIds.includes(user.id)}
+                    onChange={() => handleToggleUser(user.id)}
+                    className="user-checkbox"
+                  />
+                </td>
                 <td>
                   <div className="user-info-cell">
                     <div className="user-avatar">{getAvatarEmoji(user.role)}</div>
@@ -274,7 +363,7 @@ function UserManagement() {
                       Sửa
                     </button>
                     <button className="action-btn delete" onClick={() => handleDeleteUser(user.id)}>
-                      🗑️ Xóa
+                      Xóa
                     </button>
                   </div>
                 </td>
@@ -282,6 +371,26 @@ function UserManagement() {
             ))}
           </tbody>
         </table>
+
+        <div className="pagination-controls">
+          <button 
+            className="pagination-btn" 
+            onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+            disabled={currentPage === 1}
+          >
+            Trang trước
+          </button>
+          <span className="pagination-info">
+            Trang {currentPage} / {totalPages}
+          </span>
+          <button 
+            className="pagination-btn" 
+            onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+            disabled={currentPage === totalPages}
+          >
+            Trang tiếp
+          </button>
+        </div>
       </div>
       )}
 
@@ -294,8 +403,8 @@ function UserManagement() {
             
             {editingUser && (
               <div className="edit-user-info">
-                <p><strong>👤 Tên người dùng:</strong> {editingUser.username}</p>
-                <p><strong>📧 Email:</strong> {editingUser.email}</p>
+                <p><strong>Tên người dùng:</strong> {editingUser.username}</p>
+                <p><strong>Email:</strong> {editingUser.email}</p>
               </div>
             )}
             

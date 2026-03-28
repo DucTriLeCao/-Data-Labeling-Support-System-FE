@@ -5,30 +5,38 @@ function ActivityLogs() {
   const [logs, setLogs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(20);
+  const [totalCount, setTotalCount] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
+
+  const fetchLogs = async (pageNumber = 1) => {
+    try {
+      setLoading(true);
+      const token = localStorage.getItem('token');
+      if (!token) throw new Error('No authentication token');
+
+      const response = await getActivityLogsAPI(token, pageNumber, pageSize);
+      const paginatedData = response || {};
+      const logsData = paginatedData.items || [];
+      
+      setLogs(logsData);
+      setTotalCount(paginatedData.totalCount || 0);
+      setTotalPages(paginatedData.totalPages || 0);
+      setCurrentPage(paginatedData.pageNumber || pageNumber);
+      setError('');
+    } catch (err) {
+      console.error('Error fetching activity logs:', err);
+      setError(err.message || 'Không thể tải nhật ký hoạt động');
+      setLogs([]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchLogs = async () => {
-      try {
-        setLoading(true);
-        const token = localStorage.getItem('token');
-        if (!token) throw new Error('No authentication token');
-
-        const response = await getActivityLogsAPI(token);
-        const logsData = response.items || response.data || response || [];
-        
-        setLogs(logsData);
-        setError('');
-      } catch (err) {
-        console.error('Error fetching activity logs:', err);
-        setError(err.message || 'Không thể tải nhật ký hoạt động');
-        setLogs([]);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchLogs();
-  }, []);
+    fetchLogs(currentPage);
+  }, [currentPage]);
 
   const getActionLabel = (action) => {
     const actionMap = {
@@ -42,20 +50,6 @@ function ActivityLogs() {
       'reject': 'Từ chối'
     };
     return actionMap[action?.toLowerCase()] || action;
-  };
-
-  const getActionEmoji = (action) => {
-    const emojiMap = {
-      'create': '➕',
-      'update': '✏️',
-      'delete': '🗑️',
-      'login': '🔓',
-      'logout': '🔐',
-      'submit': '📤',
-      'approve': '✅',
-      'reject': '❌'
-    };
-    return emojiMap[action?.toLowerCase()] || '📝';
   };
 
   const formatDate = (dateString) => {
@@ -100,11 +94,11 @@ function ActivityLogs() {
                 <tr key={log.id || index}>
                   <td>
                     <span className="action-badge">
-                      {getActionEmoji(log.action)} {getActionLabel(log.action)}
+                      {getActionLabel(log.action)}
                     </span>
                   </td>
                   <td>{log.username || log.userId || '-'}</td>
-                  <td>{log.resourceType || '-'}</td>
+                  <td>{log.entityType || '-'}</td>
                   <td className="details-cell">
                     <span className="details-text">{log.details || log.description || '-'}</span>
                   </td>
@@ -113,6 +107,26 @@ function ActivityLogs() {
               ))}
             </tbody>
           </table>
+
+          <div className="pagination-controls">
+            <button 
+              className="pagination-btn" 
+              onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+              disabled={currentPage === 1}
+            >
+              Trang trước
+            </button>
+            <span className="pagination-info">
+              Trang {currentPage} / {totalPages}
+            </span>
+            <button 
+              className="pagination-btn" 
+              onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+              disabled={currentPage === totalPages}
+            >
+              Trang tiếp
+            </button>
+          </div>
         </div>
       )}
 
