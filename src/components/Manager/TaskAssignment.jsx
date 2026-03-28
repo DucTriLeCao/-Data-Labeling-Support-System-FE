@@ -103,10 +103,10 @@ function TaskAssignment() {
       const token = localStorage.getItem('token');
       if (!token) throw new Error('No authentication token');
 
-      // Call API to assign dataset
+      // Call API to assign dataset with PascalCase property names for .NET backend
       const response = await assignDatasetAPI(selectedDataset.id, {
-        userId: parseInt(assignData.userId),
-        role: assignData.role
+        UserId: parseInt(assignData.userId),
+        Role: assignData.role
       }, token);
       
       alert('Đã phân công công việc thành công');
