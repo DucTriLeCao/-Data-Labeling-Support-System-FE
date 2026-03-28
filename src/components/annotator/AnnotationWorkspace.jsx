@@ -85,6 +85,13 @@ function AnnotationWorkspace({ task, userId, onBack, retryAnnotationId }) {
           }));
           setLabels(formattedLabels);
         }
+
+        // Set project description as the label guide
+        if (taskData.projectDescription) {
+          setGuidelines({ content: taskData.projectDescription });
+        } else if (taskData.description) {
+          setGuidelines({ content: taskData.description });
+        }
       } catch (err) {
         console.error('Error loading task details:', err);
       }
@@ -560,9 +567,9 @@ function AnnotationWorkspace({ task, userId, onBack, retryAnnotationId }) {
 
         <div className="annotation-panel">
           <div className="panel-section">
-            <h4>📋 Hướng dẫn gán nhãn</h4>
+            <h4>Mô tả dự án</h4>
             <div className="guidelines-content">
-              {guidelines?.content || 'Chưa có hướng dẫn'}
+              {guidelines?.content || 'Chưa có mô tả dự án'}
             </div>
           </div>
 
