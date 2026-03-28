@@ -44,7 +44,7 @@ function AdminLayout({ user, onLogout }) {
         </nav>
 
         <button className="admin-logout-btn" onClick={onLogout}>
-          🚪 Đăng xuất
+          Đăng xuất
         </button>
       </aside>
 

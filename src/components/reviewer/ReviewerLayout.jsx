@@ -2,6 +2,7 @@ import { useState } from 'react';
 import './Reviewer.css';
 import PendingReviews from './PendingReviews';
 import ReviewWorkspace from './ReviewWorkspace';
+import ReviewerHistory from './ReviewerHistory';
 
 function ReviewerLayout({ user, onLogout }) {
   const [activeMenu, setActiveMenu] = useState('pending');
@@ -10,6 +11,7 @@ function ReviewerLayout({ user, onLogout }) {
   const menuItems = [
     { id: 'pending', label: 'Chờ duyệt', icon: '📋' },
     { id: 'workspace', label: 'Không gian duyệt', icon: '🔍' },
+    { id: 'history', label: 'Lịch sử', icon: '📊' },
   ];
 
   const handleStartReview = (annotation) => {
@@ -28,6 +30,8 @@ function ReviewerLayout({ user, onLogout }) {
         return <PendingReviews userId={user.id} onStartReview={handleStartReview} />;
       case 'workspace':
         return <ReviewWorkspace annotation={selectedAnnotation} userId={user.id} onBack={handleBackToPending} />;
+      case 'history':
+        return <ReviewerHistory />;
       default:
         return <PendingReviews userId={user.id} onStartReview={handleStartReview} />;
     }
@@ -37,7 +41,7 @@ function ReviewerLayout({ user, onLogout }) {
     <div className="reviewer-layout">
       <aside className="reviewer-sidebar">
         <div className="reviewer-sidebar-header">
-          <h2>🔍 Reviewer</h2>
+          <h2>Reviewer</h2>
           <p>Xin chào, {user.username}</p>
         </div>
         
@@ -55,7 +59,7 @@ function ReviewerLayout({ user, onLogout }) {
         </nav>
 
         <button className="reviewer-logout-btn" onClick={onLogout}>
-          🚪 Đăng xuất
+          Đăng xuất
         </button>
       </aside>
 

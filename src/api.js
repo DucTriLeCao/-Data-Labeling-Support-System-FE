@@ -47,22 +47,22 @@ export const refreshTokenAPI = async (refreshToken) => {
   return data;
 };
 
-export const forgotPasswordAPI = async (email) => {
+export const forgotPasswordAPI = async (emailOrUsername) => {
   const response = await fetch(`${API_BASE_URL}/auth/forgot-password`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email })
+    body: JSON.stringify({ emailOrUsername })
   });
   const data = await response.json();
   if (!response.ok) throw new Error(data.message || 'Forgot password request failed');
   return data;
 };
 
-export const resetPasswordAPI = async (token, newPassword) => {
+export const resetPasswordAPI = async (userId, resetToken, newPassword, confirmPassword) => {
   const response = await fetch(`${API_BASE_URL}/auth/reset-password`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ token, new_password: newPassword })
+    body: JSON.stringify({ userId: parseInt(userId), resetToken, newPassword, confirmPassword })
   });
   const data = await response.json();
   if (!response.ok) throw new Error(data.message || 'Reset password failed');
@@ -85,8 +85,8 @@ export const changePasswordAPI = async (currentPassword, newPassword, token) => 
 
 // ==================== ANNOTATOR ENDPOINTS ====================
 
-export const getAssignedTasksAPI = async (token) => {
-  const response = await fetch(`${API_BASE_URL}/annotator/assigned-tasks`, {
+export const getAssignedTasksAPI = async (token, pageNumber = 1, pageSize = 20) => {
+  const response = await fetch(`${API_BASE_URL}/annotator/assigned-tasks?pageNumber=${pageNumber}&pageSize=${pageSize}`, {
     method: 'GET',
     headers: { 'Authorization': `Bearer ${token}` }
   });
@@ -148,10 +148,24 @@ export const getAnnotationFeedbackAPI = async (annotationId, token) => {
   return data;
 };
 
+export const getAnnotatorHistoryAPI = async (token, pageNumber = 1, pageSize = 20, status = null) => {
+  let url = `${API_BASE_URL}/annotator/annotation-history?pageNumber=${pageNumber}&pageSize=${pageSize}`;
+  if (status) {
+    url += `&status=${status}`;
+  }
+  const response = await fetch(url, {
+    method: 'GET',
+    headers: { 'Authorization': `Bearer ${token}` }
+  });
+  const data = await response.json();
+  if (!response.ok) throw new Error(data.message || 'Failed to fetch annotation history');
+  return data;
+};
+
 // ==================== REVIEWER ENDPOINTS ====================
 
-export const getSubmittedQueueAPI = async (token) => {
-  const response = await fetch(`${API_BASE_URL}/reviewer/submitted-queue`, {
+export const getSubmittedQueueAPI = async (token, pageNumber = 1, pageSize = 20) => {
+  const response = await fetch(`${API_BASE_URL}/reviewer/submitted-queue?pageNumber=${pageNumber}&pageSize=${pageSize}`, {
     method: 'GET',
     headers: { 'Authorization': `Bearer ${token}` }
   });
@@ -181,6 +195,20 @@ export const submitDecisionAPI = async (decisionData, token) => {
   });
   const data = await response.json();
   if (!response.ok) throw new Error(data.message || 'Failed to submit decision');
+  return data;
+};
+
+export const getReviewerHistoryAPI = async (token, pageNumber = 1, pageSize = 20, status = null) => {
+  let url = `${API_BASE_URL}/reviewer/review-history?pageNumber=${pageNumber}&pageSize=${pageSize}`;
+  if (status) {
+    url += `&status=${status}`;
+  }
+  const response = await fetch(url, {
+    method: 'GET',
+    headers: { 'Authorization': `Bearer ${token}` }
+  });
+  const data = await response.json();
+  if (!response.ok) throw new Error(data.message || 'Failed to fetch review history');
   return data;
 };
 
@@ -278,8 +306,11 @@ export const getActivityLogsAPI = async (token) => {
 // ==================== MANAGER ENDPOINTS ====================
 
 // Projects
-export const getProjectsAPI = async (token) => {
-  const response = await fetch(`${API_BASE_URL}/manager/projects`, {
+export const getProjectsAPI = async (token, pageNumber = 1, pageSize = 20, searchTerm = '', status = '') => {
+  let url = `${API_BASE_URL}/manager/projects?pageNumber=${pageNumber}&pageSize=${pageSize}`;
+  if (searchTerm) url += `&searchTerm=${encodeURIComponent(searchTerm)}`;
+  if (status) url += `&status=${status}`;
+  const response = await fetch(url, {
     method: 'GET',
     headers: { 'Authorization': `Bearer ${token}` }
   });
@@ -327,8 +358,11 @@ export const updateProjectAPI = async (id, projectData, token) => {
 };
 
 // Datasets
-export const getDatasetsByProjectAPI = async (projectId, token) => {
-  const response = await fetch(`${API_BASE_URL}/manager/projects/${projectId}/datasets`, {
+export const getDatasetsByProjectAPI = async (projectId, token, pageNumber = 1, pageSize = 20, searchTerm = '', status = '') => {
+  let url = `${API_BASE_URL}/manager/datasets?projectId=${projectId}&pageNumber=${pageNumber}&pageSize=${pageSize}`;
+  if (searchTerm) url += `&searchTerm=${encodeURIComponent(searchTerm)}`;
+  if (status) url += `&status=${status}`;
+  const response = await fetch(url, {
     method: 'GET',
     headers: { 'Authorization': `Bearer ${token}` }
   });
@@ -351,6 +385,16 @@ export const createDatasetAPI = async (projectId, datasetData, token) => {
   return data;
 };
 
+export const getDatasetByIdAPI = async (id, token) => {
+  const response = await fetch(`${API_BASE_URL}/manager/datasets/${id}`, {
+    method: 'GET',
+    headers: { 'Authorization': `Bearer ${token}` }
+  });
+  const data = await response.json();
+  if (!response.ok) throw new Error(data.message || 'Failed to fetch dataset');
+  return data;
+};
+
 export const updateDatasetAPI = async (id, datasetData, token) => {
   const response = await fetch(`${API_BASE_URL}/manager/datasets/${id}`, {
     method: 'PUT',
@@ -366,8 +410,11 @@ export const updateDatasetAPI = async (id, datasetData, token) => {
 };
 
 // Data Items
-export const getDataItemsAPI = async (datasetId, token) => {
-  const response = await fetch(`${API_BASE_URL}/manager/datasets/${datasetId}/items`, {
+export const getDataItemsAPI = async (datasetId, token, pageNumber = 1, pageSize = 20, searchTerm = '', status = '') => {
+  let url = `${API_BASE_URL}/manager/data-items?datasetId=${datasetId}&pageNumber=${pageNumber}&pageSize=${pageSize}`;
+  if (searchTerm) url += `&searchTerm=${encodeURIComponent(searchTerm)}`;
+  if (status) url += `&status=${status}`;
+  const response = await fetch(url, {
     method: 'GET',
     headers: { 'Authorization': `Bearer ${token}` }
   });
@@ -407,9 +454,20 @@ export const createDataItemAPI = async (datasetId, itemData, token) => {
   return data;
 };
 
+export const getDataItemByIdAPI = async (id, token) => {
+  const response = await fetch(`${API_BASE_URL}/manager/data-items/${id}`, {
+    method: 'GET',
+    headers: { 'Authorization': `Bearer ${token}` }
+  });
+  const data = await response.json();
+  if (!response.ok) throw new Error(data.message || 'Failed to fetch data item');
+  return data;
+};
+
 // Labels
-export const getLabelsByProjectAPI = async (projectId, token) => {
-  const response = await fetch(`${API_BASE_URL}/manager/projects/${projectId}/labels`, {
+export const getLabelsByProjectAPI = async (projectId, token, pageNumber = 1, pageSize = 20) => {
+  const url = `${API_BASE_URL}/manager/projects/${projectId}/labels?pageNumber=${pageNumber}&pageSize=${pageSize}`;
+  const response = await fetch(url, {
     method: 'GET',
     headers: { 'Authorization': `Bearer ${token}` }
   });
@@ -432,6 +490,16 @@ export const createLabelAPI = async (projectId, labelData, token) => {
   return data;
 };
 
+export const getLabelByIdAPI = async (id, token) => {
+  const response = await fetch(`${API_BASE_URL}/manager/labels/${id}`, {
+    method: 'GET',
+    headers: { 'Authorization': `Bearer ${token}` }
+  });
+  const data = await response.json();
+  if (!response.ok) throw new Error(data.message || 'Failed to fetch label');
+  return data;
+};
+
 export const updateLabelAPI = async (id, labelData, token) => {
   const response = await fetch(`${API_BASE_URL}/manager/labels/${id}`, {
     method: 'PUT',
@@ -443,16 +511,6 @@ export const updateLabelAPI = async (id, labelData, token) => {
   });
   const data = await response.json();
   if (!response.ok) throw new Error(data.message || 'Failed to update label');
-  return data;
-};
-
-export const deleteLabelAPI = async (id, token) => {
-  const response = await fetch(`${API_BASE_URL}/manager/labels/${id}`, {
-    method: 'DELETE',
-    headers: { 'Authorization': `Bearer ${token}` }
-  });
-  const data = await response.json();
-  if (!response.ok) throw new Error(data.message || 'Failed to delete label');
   return data;
 };
 
@@ -542,5 +600,115 @@ export const getExportJobsAPI = async (projectId, token) => {
   });
   const data = await response.json();
   if (!response.ok) throw new Error(data.message || 'Failed to fetch export jobs');
+  return data;
+};
+
+// ==================== DELETE ENDPOINTS ====================
+
+// Projects - Single Delete
+export const deleteProjectAPI = async (projectId, token) => {
+  const response = await fetch(`${API_BASE_URL}/manager/projects/${projectId}`, {
+    method: 'DELETE',
+    headers: { 'Authorization': `Bearer ${token}` }
+  });
+  if (response.status === 204) return { success: true, message: 'Project deleted successfully' };
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(data.message || 'Failed to delete project');
+  return data;
+};
+
+// Projects - Bulk Delete
+export const bulkDeleteProjectsAPI = async (projectIds, token) => {
+  const response = await fetch(`${API_BASE_URL}/manager/projects/bulk`, {
+    method: 'DELETE',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`
+    },
+    body: JSON.stringify(projectIds)
+  });
+  const data = await response.json();
+  if (!response.ok) throw new Error(data.message || 'Failed to bulk delete projects');
+  return data;
+};
+
+// Datasets - Single Delete
+export const deleteDatasetAPI = async (datasetId, token) => {
+  const response = await fetch(`${API_BASE_URL}/manager/datasets/${datasetId}`, {
+    method: 'DELETE',
+    headers: { 'Authorization': `Bearer ${token}` }
+  });
+  if (response.status === 204) return { success: true, message: 'Dataset deleted successfully' };
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(data.message || 'Failed to delete dataset');
+  return data;
+};
+
+// Datasets - Bulk Delete
+export const bulkDeleteDatasetsAPI = async (datasetIds, token) => {
+  const response = await fetch(`${API_BASE_URL}/manager/datasets/bulk`, {
+    method: 'DELETE',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`
+    },
+    body: JSON.stringify(datasetIds)
+  });
+  const data = await response.json();
+  if (!response.ok) throw new Error(data.message || 'Failed to bulk delete datasets');
+  return data;
+};
+
+// Data Items - Single Delete
+export const deleteDataItemAPI = async (dataItemId, token) => {
+  const response = await fetch(`${API_BASE_URL}/manager/data-items/${dataItemId}`, {
+    method: 'DELETE',
+    headers: { 'Authorization': `Bearer ${token}` }
+  });
+  if (response.status === 204) return { success: true, message: 'Data item deleted successfully' };
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(data.message || 'Failed to delete data item');
+  return data;
+};
+
+// Data Items - Bulk Delete
+export const bulkDeleteDataItemsAPI = async (dataItemIds, token) => {
+  const response = await fetch(`${API_BASE_URL}/manager/data-items/bulk`, {
+    method: 'DELETE',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`
+    },
+    body: JSON.stringify(dataItemIds)
+  });
+  const data = await response.json();
+  if (!response.ok) throw new Error(data.message || 'Failed to bulk delete data items');
+  return data;
+};
+
+// Labels - Single Delete
+export const deleteLabelAPI = async (labelId, token) => {
+  const response = await fetch(`${API_BASE_URL}/manager/labels/${labelId}`, {
+    method: 'DELETE',
+    headers: { 'Authorization': `Bearer ${token}` }
+  });
+  if (response.status === 204) return { success: true, message: 'Label deleted successfully' };
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(data.message || 'Failed to delete label');
+  return data;
+};
+
+// Labels - Bulk Delete
+export const bulkDeleteLabelsAPI = async (labelIds, token) => {
+  const response = await fetch(`${API_BASE_URL}/manager/labels/bulk`, {
+    method: 'DELETE',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`
+    },
+    body: JSON.stringify(labelIds)
+  });
+  const data = await response.json();
+  if (!response.ok) throw new Error(data.message || 'Failed to bulk delete labels');
   return data;
 };

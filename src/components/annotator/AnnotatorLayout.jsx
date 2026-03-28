@@ -3,6 +3,7 @@ import './Annotator.css';
 import TaskList from './TaskList';
 import AnnotationWorkspace from './AnnotationWorkspace';
 import RejectedAnnotations from './RejectedAnnotations';
+import AnnotatorHistory from './AnnotatorHistory';
 
 function AnnotatorLayout({ user, onLogout }) {
   const [activeMenu, setActiveMenu] = useState('tasks');
@@ -10,8 +11,10 @@ function AnnotatorLayout({ user, onLogout }) {
   const [retryAnnotationId, setRetryAnnotationId] = useState(null);
 
   const menuItems = [
-    { id: 'tasks', label: 'Danh sách công việc', icon: '📋' },
-    { id: 'workspace', label: 'Không gian gán nhãn', icon: '🏷️' },
+    { id: 'tasks', label: 'Danh sách công việc', icon: '' },
+    { id: 'rejected', label: 'Bị từ chối', icon: '' },
+    { id: 'workspace', label: 'Không gian gán nhãn', icon: '' },
+    { id: 'history', label: 'Lịch sử', icon: '' },
   ];
 
   const handleStartAnnotation = (task) => {
@@ -35,12 +38,9 @@ function AnnotatorLayout({ user, onLogout }) {
   const renderContent = () => {
     switch (activeMenu) {
       case 'tasks':
-        return (
-          <div>
-            <TaskList userId={user.id} onStartAnnotation={handleStartAnnotation} />
-            <RejectedAnnotations userId={user.id} onRetry={handleRetryAnnotation} />
-          </div>
-        );
+        return <TaskList userId={user.id} onStartAnnotation={handleStartAnnotation} />;
+      case 'rejected':
+        return <RejectedAnnotations userId={user.id} onRetry={handleRetryAnnotation} />;
       case 'workspace':
         return (
           <AnnotationWorkspace 
@@ -50,13 +50,10 @@ function AnnotatorLayout({ user, onLogout }) {
             retryAnnotationId={retryAnnotationId}
           />
         );
+      case 'history':
+        return <AnnotatorHistory />;
       default:
-        return (
-          <div>
-            <TaskList userId={user.id} onStartAnnotation={handleStartAnnotation} />
-            <RejectedAnnotations userId={user.id} onRetry={handleRetryAnnotation} />
-          </div>
-        );
+        return <TaskList userId={user.id} onStartAnnotation={handleStartAnnotation} />;
     }
   };
 
@@ -64,7 +61,7 @@ function AnnotatorLayout({ user, onLogout }) {
     <div className="annotator-layout">
       <aside className="annotator-sidebar">
         <div className="annotator-sidebar-header">
-          <h2>🏷️ Annotator</h2>
+          <h2>Annotator</h2>
           <p>Xin chào, {user.username}</p>
         </div>
         
@@ -82,7 +79,7 @@ function AnnotatorLayout({ user, onLogout }) {
         </nav>
 
         <button className="annotator-logout-btn" onClick={onLogout}>
-          🚪 Đăng xuất
+          Đăng xuất
         </button>
       </aside>
 

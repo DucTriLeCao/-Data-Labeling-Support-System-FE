@@ -96,7 +96,7 @@ function AnnotationWorkspace({ task, userId, onBack, retryAnnotationId }) {
   if (!task) {
     return (
       <>
-        <h1>🏷️ Không gian gán nhãn</h1>
+        <h1>Không gian gán nhãn</h1>
         <div className="empty-state">
           <div className="empty-icon">📭</div>
           <h3>Chưa chọn công việc</h3>
@@ -304,7 +304,7 @@ function AnnotationWorkspace({ task, userId, onBack, retryAnnotationId }) {
     setCurrentRect(null);
   };
 
-  const handleDoubleClick = () => {
+  const handleCompletePolygon = () => {
     if (activeTool === 'polygon' && polygonPoints.length >= 3) {
       const labelInfo = labels.find(l => l.id === selectedLabel);
       const newAnnotation = {
@@ -349,7 +349,7 @@ function AnnotationWorkspace({ task, userId, onBack, retryAnnotationId }) {
   return (
     <>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-        <h1 style={{ margin: 0 }}>🏷️ Không gian gán nhãn</h1>
+        <h1 style={{ margin: 0 }}>Không gian gán nhãn</h1>
         <button 
           onClick={onBack}
           style={{ padding: '8px 16px', background: '#f3f4f6', border: 'none', borderRadius: '6px', cursor: 'pointer' }}
@@ -388,13 +388,24 @@ function AnnotationWorkspace({ task, userId, onBack, retryAnnotationId }) {
                 📍 Điểm
               </button>
               {polygonPoints.length > 0 && (
-                <button 
-                  className="tool-btn"
-                  onClick={handleCancelPolygon}
-                  style={{ background: '#ef4444', color: 'white', borderColor: '#ef4444' }}
-                >
-                  ✕ Hủy đa giác
-                </button>
+                <>
+                  {polygonPoints.length >= 3 && (
+                    <button 
+                      className="tool-btn"
+                      onClick={handleCompletePolygon}
+                      style={{ background: '#059669', color: 'white', borderColor: '#059669' }}
+                    >
+                      ✓ Hoàn thành đa giác
+                    </button>
+                  )}
+                  <button 
+                    className="tool-btn"
+                    onClick={handleCancelPolygon}
+                    style={{ background: '#ef4444', color: 'white', borderColor: '#ef4444' }}
+                  >
+                    ✕ Hủy đa giác
+                  </button>
+                </>
               )}
             </div>
           </div>
@@ -403,7 +414,7 @@ function AnnotationWorkspace({ task, userId, onBack, retryAnnotationId }) {
           <div style={{ padding: '8px 12px', background: '#f0fdf4', borderRadius: '6px', marginBottom: '12px', fontSize: '13px', color: '#059669' }}>
             {activeTool === 'select' && '🖱️ Click vào annotation để chọn'}
             {activeTool === 'bbox' && '⬜ Kéo chuột để vẽ hình chữ nhật'}
-            {activeTool === 'polygon' && '🔷 Click để thêm điểm, double-click để hoàn thành đa giác'}
+            {activeTool === 'polygon' && '🔷 Click để thêm điểm, khi có ≥3 điểm bấm nút "Hoàn thành"'}
             {activeTool === 'point' && '📍 Click để đánh dấu điểm trên đối tượng'}
           </div>
 
@@ -428,7 +439,6 @@ function AnnotationWorkspace({ task, userId, onBack, retryAnnotationId }) {
               onMouseMove={handleMouseMove}
               onMouseUp={handleMouseUp}
               onMouseLeave={handleMouseUp}
-              onDoubleClick={handleDoubleClick}
             >
               {/* Existing annotations */}
               {annotations.map(ann => (

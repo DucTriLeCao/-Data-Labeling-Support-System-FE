@@ -1,37 +1,34 @@
 import { useState, useEffect } from 'react';
-import { getProjectsAPI, getLabelsByProjectAPI, createLabelAPI, updateLabelAPI, deleteLabelAPI } from '../../api';
+import { getProjectsAPI, getLabelsByProjectAPI, createLabelAPI, updateLabelAPI, deleteLabelAPI, bulkDeleteLabelsAPI } from '../../api';
+import ProjectSearchSelect from './ProjectSearchSelect';
 
 function LabelManagement() {
-  const [projects, setProjects] = useState([]);
   const [labels, setLabels] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [selectedProject, setSelectedProject] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [selectedProject, setSelectedProject] = useState(null);
   const [showModal, setShowModal] = useState(false);
   const [editingLabel, setEditingLabel] = useState(null);
   const [formData, setFormData] = useState({ name: '', parentId: '' });
+  const [selectedLabels, setSelectedLabels] = useState(new Set());
 
   useEffect(() => {
-    const fetchProjects = async () => {
+    // Auto-load first project on mount
+    const autoLoadFirstProject = async () => {
       try {
         const token = localStorage.getItem('token');
-        if (!token) throw new Error('No authentication token');
-        
-        const response = await getProjectsAPI(token);
-        const projectsList = response.items || response.data || [];
-        setProjects(projectsList);
-        
-        if (projectsList.length > 0) {
-          setSelectedProject(projectsList[0].id);
+        if (!token) return;
+        const response = await getProjectsAPI(token, 1, 20, '');
+        // Backend returns PagedResult with PascalCase: Items, TotalCount, PageNumber, PageSize
+        const projects = response.Items || response.data?.Items || response.items || [];
+        if (projects.length > 0) {
+          setSelectedProject(projects[0].id);
         }
-        
-        setLoading(false);
       } catch (err) {
-        setProjects([]);
-        setLoading(false);
+        console.error('Error auto-loading projects:', err);
       }
     };
-
-    fetchProjects();
+    autoLoadFirstProject();
+    setLoading(false);
   }, []);
 
   useEffect(() => {
@@ -46,7 +43,8 @@ function LabelManagement() {
         const labelsList = response.items || response.data || [];
         if (Array.isArray(labelsList) && labelsList.length > 0) {
         }
-        setLabels(labelsList);
+        const sortedLabels = Array.isArray(labelsList) ? [...labelsList].sort((a, b) => a.id - b.id) : [];
+        setLabels(sortedLabels);
       } catch (err) {
         setLabels([]);
       }
@@ -116,9 +114,47 @@ function LabelManagement() {
 
       await deleteLabelAPI(labelId, token);
       setLabels(labels.filter(l => l.id !== labelId));
+      setSelectedLabels(new Set([...selectedLabels].filter(id => id !== labelId)));
     } catch (err) {
       console.error('Error deleting label:', err);
       alert('Lỗi khi xóa nhãn: ' + err.message);
+    }
+  };
+
+  const handleBulkDeleteLabels = async () => {
+    if (selectedLabels.size === 0) {
+      alert('Vui lòng chọn ít nhất một nhãn');
+      return;
+    }
+    if (!confirm(`Bạn có chắc muốn xóa ${selectedLabels.size} nhãn đã chọn?`)) return;
+
+    try {
+      const token = localStorage.getItem('token');
+      const ids = Array.from(selectedLabels);
+      const result = await bulkDeleteLabelsAPI(ids, token);
+      alert(`Xóa thành công: ${result.successCount}, Thất bại: ${result.failureCount}`);
+      setLabels(labels.filter(l => !selectedLabels.has(l.id)));
+      setSelectedLabels(new Set());
+    } catch (err) {
+      alert('Lỗi xóa hàng loạt: ' + err.message);
+    }
+  };
+
+  const toggleLabelSelection = (labelId) => {
+    const newSet = new Set(selectedLabels);
+    if (newSet.has(labelId)) {
+      newSet.delete(labelId);
+    } else {
+      newSet.add(labelId);
+    }
+    setSelectedLabels(newSet);
+  };
+
+  const toggleSelectAllLabels = () => {
+    if (selectedLabels.size === labels.length) {
+      setSelectedLabels(new Set());
+    } else {
+      setSelectedLabels(new Set(labels.map(l => l.id)));
     }
   };
 
@@ -127,32 +163,22 @@ function LabelManagement() {
   return (
     <div>
       <div className="page-header">
-        <h1>🏷️ Quản lý nhãn</h1>
+        <h1>Quản lý nhãn</h1>
         <p>Quản lý các nhãn gán nhãn cho dự án</p>
       </div>
 
-      {projects.length === 0 ? (
-        <div className="empty-state">
-          <p>Chưa có dự án nào</p>
-        </div>
-      ) : (
-        <>
-          {/* Project Selector */}
-          <div className="card" style={{ marginBottom: '20px' }}>
-            <div className="form-group" style={{ marginBottom: 0 }}>
-              <label className="form-label">Chọn dự án</label>
-              <select
-                className="form-select"
-                value={selectedProject}
-                onChange={e => setSelectedProject(parseInt(e.target.value))}
-                style={{ maxWidth: '400px' }}
-              >
-                {projects.map(p => (
-                  <option key={p.id} value={p.id}>{p.name}</option>
-                ))}
-              </select>
-            </div>
+      <>
+        {/* Project Selector */}
+        <div className="card" style={{ marginBottom: '20px' }}>
+          <div className="form-group" style={{ marginBottom: 0 }}>
+            <label className="form-label">Chọn dự án</label>
+            <ProjectSearchSelect
+              value={selectedProject}
+              onChange={setSelectedProject}
+              disabled={false}
+            />
           </div>
+        </div>
 
           {/* Labels List */}
           {labels.length === 0 ? (
@@ -167,9 +193,23 @@ function LabelManagement() {
                   ➕ Tạo nhãn mới
                 </button>
               </div>
+              {selectedLabels.size > 0 && (
+                <div style={{ padding: '20px', borderBottom: '1px solid #e5e7eb', display: 'flex', gap: '10px' }}>
+                  <button className="btn btn-danger" onClick={handleBulkDeleteLabels}>
+                    🗑️ Xóa ({selectedLabels.size})
+                  </button>
+                </div>
+              )}
               <table>
                 <thead>
                   <tr>
+                    <th style={{ width: '40px' }}>
+                      <input 
+                        type="checkbox" 
+                        checked={selectedLabels.size === labels.length && labels.length > 0}
+                        onChange={toggleSelectAllLabels}
+                      />
+                    </th>
                     <th>Tên nhãn</th>
                     <th>Nhãn cha</th>
                     <th>Hành động</th>
@@ -180,15 +220,22 @@ function LabelManagement() {
                     const parentLabel = labels.find(l => l.id === label.parentId);
                     return (
                       <tr key={label.id}>
+                        <td style={{ width: '40px' }}>
+                          <input 
+                            type="checkbox" 
+                            checked={selectedLabels.has(label.id)}
+                            onChange={() => toggleLabelSelection(label.id)}
+                          />
+                        </td>
                         <td>{label.name}</td>
                         <td>{parentLabel ? parentLabel.name : '(Không có)'}</td>
                         <td>
                           <button 
                             className="btn btn-secondary btn-sm" 
                             onClick={() => handleEditLabel(label)}
-                            style={{ marginRight: '8px' }}
+                            style={{ marginRight: '4px' }}
                           >
-                            ✏️ Sửa
+                            Sửa
                           </button>
                           <button 
                             className="btn btn-danger btn-sm" 
@@ -205,14 +252,13 @@ function LabelManagement() {
             </div>
           )}
         </>
-      )}
 
       {/* Modal for Create/Edit */}
       {showModal && (
         <div className="modal-overlay" onClick={() => setShowModal(false)}>
           <div className="modal" onClick={e => e.stopPropagation()}>
             <div className="modal-header">
-              <h3>{editingLabel ? '✏️ Chỉnh sửa nhãn' : '➕ Tạo nhãn mới'}</h3>
+              <h3>{editingLabel ? 'Chỉnh sửa nhãn' : 'Tạo nhãn mới'}</h3>
               <button className="modal-close" onClick={() => setShowModal(false)}>&times;</button>
             </div>
             <div className="modal-body">

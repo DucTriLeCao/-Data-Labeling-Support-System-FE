@@ -71,7 +71,7 @@ function ActivityLogs() {
   return (
     <>
       <div className="activity-logs-header">
-        <h1>📋 Quản lý nhật ký hoạt động</h1>
+        <h1>Quản lý nhật ký hoạt động</h1>
       </div>
 
       {loading && <div className="loading">Đang tải nhật ký hoạt động...</div>}

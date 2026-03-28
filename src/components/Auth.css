@@ -169,59 +169,76 @@
   background-color: #4f46e5;
 }
 
-.divider {
-  display: flex;
-  align-items: center;
-  margin: 24px 0;
-}
-
-.divider::before,
-.divider::after {
-  content: '';
-  flex: 1;
-  height: 1px;
-  background-color: #e5e7eb;
-}
-
-.divider span {
-  padding: 0 16px;
-  font-size: 14px;
-  color: #9ca3af;
-}
-
-.social-buttons {
-  display: flex;
-  gap: 16px;
-  justify-content: center;
-}
-
-.social-button {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+.success-message {
+  background-color: #dcfce7;
+  border: 1px solid #86efac;
+  color: #166534;
   padding: 12px;
+  border-radius: 8px;
+  margin-bottom: 16px;
+  font-size: 14px;
+  text-align: center;
+}
+
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal-content {
   background: white;
-  border: 1px solid #e5e7eb;
-  border-radius: 25px;
+  border-radius: 16px;
+  padding: 32px;
+  width: 100%;
+  max-width: 420px;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.modal-header h2 {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 600;
+  color: #6366f1;
+}
+
+.modal-close {
+  background: none;
+  border: none;
+  font-size: 24px;
+  color: #9ca3af;
   cursor: pointer;
-  transition: background-color 0.2s, border-color 0.2s;
+  padding: 0;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  transition: background-color 0.2s;
 }
 
-.social-button:hover {
-  background-color: #f9fafb;
-  border-color: #d1d5db;
-}
-
-.social-button svg {
-  width: 24px;
-  height: 24px;
-}
-
-.social-icon {
-  width: 24px;
-  height: 24px;
-  object-fit: contain;
+.modal-close:hover {
+  background-color: #f3f4f6;
+  color: #6b7280;
 }
 
 .auth-footer {

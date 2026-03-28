@@ -7,16 +7,17 @@ function RejectedAnnotations({ userId, onRetry }) {
   const [error, setError] = useState(null);
   const [expandedId, setExpandedId] = useState(null);
 
-  useEffect(() => {
-    const fetchRejectedAnnotations = async () => {
+  const fetchRejectedAnnotations = async () => {
       try {
         setLoading(true);
+        
         const token = localStorage.getItem('token');
         if (!token) throw new Error('No authentication token');
         
         // Get all assigned tasks
         const tasksResponse = await getAssignedTasksAPI(token);
-        const tasks = tasksResponse.data || [];
+        const tasks = (tasksResponse.data?.items) || [];
+        console.log('Fetched tasks:', tasks.length);
         
         // Fetch feedback for each task
         const rejectedList = [];
@@ -32,10 +33,11 @@ function RejectedAnnotations({ userId, onRetry }) {
                 // Get feedback for this annotation
                 const feedbackResponse = await getAnnotationFeedbackAPI(annotationId, token);
                 const data = feedbackResponse.data || feedbackResponse;
+                console.log('Feedback for annotation', annotationId, ':', data);
                 
                 // Check if has rejected feedbacks
                 if (data.feedbacks && data.feedbacks.length > 0) {
-                  const hasRejected = data.feedbacks.some(f => f.reviewStatus === 'rejected');
+                  const hasRejected = data.feedbacks.some(f => f.reviewStatus && f.reviewStatus.toLowerCase() === 'rejected');
                   if (hasRejected) {
                     // Store task info in the data for retry
                     data._task = task;
@@ -43,17 +45,19 @@ function RejectedAnnotations({ userId, onRetry }) {
                   }
                 }
               } catch (err) {
-                // Silently skip if feedback fetch fails
+                console.error('Error fetching feedback for annotation', annotationId, ':', err);
               }
             }
           } catch (err) {
-            // Silently skip if task detail fetch fails
+            console.error('Error fetching task detail:', err);
           }
         }
         
+        console.log('Total rejected annotations found:', rejectedList.length);
         setRejectedAnnotations(rejectedList);
         setError(null);
       } catch (err) {
+        console.error('Error fetching rejected annotations:', err);
         setError(err.message);
         setRejectedAnnotations([]);
       } finally {
@@ -61,6 +65,7 @@ function RejectedAnnotations({ userId, onRetry }) {
       }
     };
 
+  useEffect(() => {
     fetchRejectedAnnotations();
   }, [userId]);
 
@@ -71,7 +76,7 @@ function RejectedAnnotations({ userId, onRetry }) {
   if (error) {
     return (
       <div className="rejected-annotations-container">
-        <h2>🔴 Annotation Bị Từ Chối</h2>
+        <h2>Annotation Bị Từ Chối</h2>
         <div className="error-message" style={{ padding: '20px', background: '#fef2f2', borderRadius: '6px', color: '#dc2626' }}>
           Không thể tải annotation bị từ chối: {error}
         </div>
@@ -82,9 +87,9 @@ function RejectedAnnotations({ userId, onRetry }) {
   if (rejectedAnnotations.length === 0) {
     return (
       <div className="rejected-annotations-container">
-        <h2>🔴 Annotation Bị Từ Chối</h2>
+        <h2>Annotation Bị Từ Chối</h2>
         <div className="empty-state">
-          <div className="empty-icon">✅</div>
+          <div className="empty-icon">-</div>
           <h3>Không có annotation bị từ chối</h3>
           <p>Tất cả annotation của bạn đều được chấp nhận!</p>
         </div>
@@ -94,7 +99,7 @@ function RejectedAnnotations({ userId, onRetry }) {
 
   return (
     <div className="rejected-annotations-container">
-      <h2>🔴 Annotation Bị Từ Chối ({rejectedAnnotations.length})</h2>
+      <h2>Annotation Bị Từ Chối ({rejectedAnnotations.length})</h2>
       
       <div className="rejected-list">
         {rejectedAnnotations.map(annotation => (
@@ -110,7 +115,7 @@ function RejectedAnnotations({ userId, onRetry }) {
                   <span className="annotation-type">({annotation.annotationType})</span>
                 </div>
                 <div className="annotation-date">
-                  📅 {new Date(annotation.createdAt).toLocaleDateString('vi-VN')}
+                  {new Date(annotation.createdAt).toLocaleDateString('vi-VN')}
                 </div>
               </div>
               <span className="expand-icon">
@@ -121,52 +126,57 @@ function RejectedAnnotations({ userId, onRetry }) {
             {expandedId === annotation.annotationId && (
               <div className="rejected-details">
                 {annotation.feedbacks && annotation.feedbacks.length > 0 ? (
-                  annotation.feedbacks.map((feedback, idx) => {
-                    let parsedComment = {};
-                    try {
-                      parsedComment = JSON.parse(feedback.comment);
-                    } catch (e) {
-                      parsedComment = { Comment: feedback.comment, ErrorCategories: [] };
-                    }
+                  annotation.feedbacks
+                    .filter(feedback => feedback.reviewStatus && feedback.reviewStatus.toLowerCase() === 'rejected')
+                    .map((feedback, idx) => {
+                      let parsedComment = {};
+                      try {
+                        parsedComment = JSON.parse(feedback.comment);
+                      } catch (e) {
+                        parsedComment = { Comment: feedback.comment, ErrorCategories: [] };
+                      }
 
-                    return (
-                      <div key={idx} className="feedback-block">
-                        <div className="feedback-header">
-                          <span className="reviewer-name">👤 {feedback.reviewerName}</span>
-                          <span className="review-date">
-                            {new Date(feedback.reviewedAt).toLocaleDateString('vi-VN')}
-                          </span>
-                        </div>
-
-                        <div className="feedback-content">
-                          <div className="feedback-comment">
-                            <strong>💬 Nhận xét:</strong>
-                            <p>{parsedComment.Comment || feedback.comment}</p>
+                      return (
+                        <div key={idx} className="feedback-block">
+                          <div className="feedback-header">
+                            <span className="reviewer-name">{feedback.reviewerName}</span>
+                            <span className="status-badge" style={{ background: '#fee2e2', color: '#dc2626', padding: '2px 8px', borderRadius: '4px', fontSize: '12px' }}>
+                              {feedback.reviewStatus || 'N/A'}
+                            </span>
+                            <span className="review-date">
+                              {new Date(feedback.reviewedAt).toLocaleDateString('vi-VN')}
+                            </span>
                           </div>
 
-                          {parsedComment.ErrorCategories && parsedComment.ErrorCategories.length > 0 && (
-                            <div className="error-categories">
-                              <strong>⚠️ Lý do từ chối:</strong>
-                              <ul>
-                                {parsedComment.ErrorCategories.map((category, i) => (
-                                  <li key={i}>{category}</li>
-                                ))}
-                              </ul>
+                          <div className="feedback-content">
+                            <div className="feedback-comment">
+                              <strong>Nhận xét:</strong>
+                              <p>{parsedComment.Comment || feedback.comment}</p>
                             </div>
-                          )}
-                        </div>
 
-                        <div className="feedback-action">
-                          <button 
-                            className="retry-btn"
-                            onClick={() => onRetry && onRetry(annotation._task, annotation.annotationId)}
-                          >
-                            ↩️ Chỉnh sửa lại
-                          </button>
+                            {parsedComment.ErrorCategories && parsedComment.ErrorCategories.length > 0 && (
+                              <div className="error-categories">
+                                <strong>Lý do từ chối:</strong>
+                                <ul>
+                                  {parsedComment.ErrorCategories.map((category, i) => (
+                                    <li key={i}>{category}</li>
+                                  ))}
+                                </ul>
+                              </div>
+                            )}
+                          </div>
+
+                          <div className="feedback-action">
+                            <button 
+                              className="retry-btn"
+                              onClick={() => onRetry && onRetry(annotation._task, annotation.annotationId)}
+                            >
+                              Chỉnh sửa lại
+                            </button>
+                          </div>
                         </div>
-                      </div>
-                    );
-                  })
+                      );
+                    })
                 ) : (
                   <div className="no-feedback">Không có phản hồi chi tiết</div>
                 )}

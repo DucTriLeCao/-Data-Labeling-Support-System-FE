@@ -264,14 +264,14 @@ function UserManagement() {
                 </td>
                 <td>
                   <span className={`status-badge ${user.status === 'Active' ? 'active' : 'inactive'}`}>
-                    {user.status === 'Active' ? 'Hoạt động' : 'Vô hiệu'}
+                    {user.status === 'Active' ? 'Hoạt động' : 'Không hoạt động'}
                   </span>
                 </td>
                 <td>{user.createdAt || user.created_at || '-'}</td>
                 <td>
                   <div className="action-buttons">
                     <button className="action-btn edit" onClick={() => handleEditUser(user)}>
-                      ✏️ Sửa
+                      Sửa
                     </button>
                     <button className="action-btn delete" onClick={() => handleDeleteUser(user.id)}>
                       🗑️ Xóa
@@ -288,7 +288,7 @@ function UserManagement() {
       {showModal && (
         <div className="admin-modal-overlay" onClick={() => setShowModal(false)}>
           <div className="admin-modal" onClick={e => e.stopPropagation()}>
-            <h2>{editingUser ? '✏️ Chỉnh sửa người dùng' : '➕ Thêm người dùng mới'}</h2>
+            <h2>{editingUser ? 'Chỉnh sửa người dùng' : 'Thêm người dùng mới'}</h2>
             
             {formError && <div className="form-error">{formError}</div>}
             

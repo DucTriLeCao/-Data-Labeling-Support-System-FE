@@ -314,7 +314,7 @@ function ReviewWorkspace({ annotation, userId, onBack }) {
             <h3>{(detailData.dataContent || detailData.DataContent)?.split('/').pop() || `Item ${detailData.dataItemId || detailData.DataItemId}`}</h3>
             <div className="annotator-info">
               <div className="avatar">👤</div>
-              <span>Người gán nhãn: <strong>{detailData.annotatorName || detailData.AnnotatorName || 'Unknown'}</strong></span>
+              <span>Người gán nhãn: <strong>{detailData.annotatorName || detailData.AnnotatorName || 'Không xác định'}</strong></span>
             </div>
           </div>
           <div className="review-canvas-display" ref={canvasRef} style={{ position: 'relative', overflow: 'hidden' }}>

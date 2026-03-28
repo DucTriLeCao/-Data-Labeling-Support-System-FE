@@ -32,7 +32,7 @@ function ReviewHistory({ userId }) {
   if (reviews.length === 0) {
     return (
       <>
-        <h1>📋 Lịch sử duyệt</h1>
+        <h1>Lịch sử duyệt</h1>
         <div className="empty-state">
           <p>Chưa có lịch sử duyệt nào</p>
         </div>
@@ -41,12 +41,17 @@ function ReviewHistory({ userId }) {
   }
 
   const getStatusLabel = (status) => {
-    switch (status?.toLowerCase()) {
-      case 'approved': return 'Chấp nhận';
-      case 'rejected': return 'Từ chối';
-      default: return status || 'Unknown';
-    }
-  };
+    const statusLower = status?.toLowerCase();
+    const statusMap = {
+      'approved': 'Đã duyệt',
+      'rejected': 'Bị từ chối',
+      'need_rework': 'Cần sửa lại',
+      'needsrework': 'Cần sửa lại',
+      'submitted': 'Chờ duyệt',
+      'pending': 'Chờ xử lý',
+      'inprogress': 'Đang xử lý'
+    };
+    return statusMap[statusLower] || status || 'Không xác định';
 
   // Stats
   const totalReviewed = userReviews.length;

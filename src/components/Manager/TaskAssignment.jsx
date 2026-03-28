@@ -116,7 +116,7 @@ function TaskAssignment() {
   return (
     <div>
       <div className="page-header">
-        <h1>📋 Phân công công việc</h1>
+        <h1>Phân công công việc</h1>
         <p>Phân công annotator và reviewer cho các bộ dữ liệu</p>
       </div>
 
@@ -191,7 +191,7 @@ function TaskAssignment() {
                               <td>{datasetDesc || 'N/A'}</td>
                               <td>
                                 <span className={`status-badge status-${datasetStatus}`}>
-                                  {datasetStatus === 'active' ? '🟢 Hoạt động' : datasetStatus === 'assigned' ? '🔵 Đã phân công' : '🔴 Không hoạt động'}
+                                  {datasetStatus === 'active' ? 'Hoạt động' : datasetStatus === 'assigned' ? 'Đã phân công' : 'Không hoạt động'}
                                 </span>
                               </td>
                               <td>{createdDate}</td>

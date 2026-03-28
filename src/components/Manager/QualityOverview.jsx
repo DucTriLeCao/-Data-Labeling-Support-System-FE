@@ -37,7 +37,7 @@ function QualityOverview() {
   return (
     <div>
       <div className="page-header">
-        <h1>📊 Tổng quan chất lượng gán nhãn</h1>
+        <h1>Tổng quan chất lượng gán nhãn</h1>
         <p>Theo dõi và đánh giá chất lượng công việc gán nhãn</p>
       </div>
 
@@ -108,7 +108,7 @@ function QualityOverview() {
                   <td>{ann.id}</td>
                   <td>
                     <span className={`status-badge status-${ann.status || 'pending'}`}>
-                      {ann.status || 'Pending'}
+                      {getStatusLabel(ann.status || 'pending')}
                     </span>
                   </td>
                   <td>{ann.labelType || 'N/A'}</td>
@@ -121,6 +121,18 @@ function QualityOverview() {
       )}
     </div>
   );
+  
+  const getStatusLabel = (status) => {
+    const statusMap = {
+      'pending': 'Chờ xử lý',
+      'submitted': 'Chờ duyệt',
+      'approved': 'Đã duyệt',
+      'rejected': 'Bị từ chối',
+      'need_rework': 'Cần sửa lại',
+      'inprogress': 'Đang xử lý'
+    };
+    return statusMap[status?.toLowerCase()] || status;
+  }
 }
 
 export default QualityOverview;
