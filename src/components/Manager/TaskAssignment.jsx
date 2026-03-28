@@ -64,8 +64,16 @@ function TaskAssignment() {
       if (!token) throw new Error('No token');
 
       const response = await getManagerUsersAPI(token);
-      const usersData = response.items || response.data || response;
-      const usersList = Array.isArray(usersData) ? usersData : [];
+      // Handle different response formats
+      let usersData = response.items || response.data || response;
+      let usersList = Array.isArray(usersData) ? usersData : [];
+      
+      // Filter to only show active Annotators and Reviewers
+      usersList = usersList.filter(user => 
+        user.status === 'Active' && 
+        (user.role === 'Annotator' || user.role === 'Reviewer')
+      );
+      
       setUsers(usersList);
     } catch (err) {
       console.error('Error fetching users:', err);
@@ -221,42 +229,50 @@ function TaskAssignment() {
         <div className="modal-overlay" onClick={() => setShowModal(false)}>
           <div className="modal" onClick={e => e.stopPropagation()}>
             <div className="modal-header">
-              <h3>👤 Phân công - {selectedDataset?.name}</h3>
+              <h3>Phân công - {selectedDataset?.name}</h3>
               <button className="modal-close" onClick={() => setShowModal(false)}>&times;</button>
             </div>
             <div className="modal-body">
-              <div className="form-group">
-                <label className="form-label">Chọn người thực hiện</label>
-                <select
-                  className="form-select"
-                  value={assignData.userId}
-                  onChange={e => setAssignData({ ...assignData, userId: e.target.value })}
-                  disabled={assigning}
-                >
-                  <option value="">-- Chọn người --</option>
-                  {users.map(user => (
-                    <option key={user.id} value={user.id}>
-                      {user.username} ({user.email}) - {user.role}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div className="form-group">
-                <label className="form-label">Vai trò</label>
-                <select
-                  className="form-select"
-                  value={assignData.role}
-                  onChange={e => setAssignData({ ...assignData, role: e.target.value })}
-                  disabled={assigning}
-                >
-                  <option value="Annotator">Annotator (Gán nhãn)</option>
-                  <option value="Reviewer">Reviewer (Duyệt)</option>
-                </select>
-              </div>
+              {users.length === 0 ? (
+                <div style={{ padding: '20px', textAlign: 'center', color: '#dc2626', background: '#fee2e2', borderRadius: '6px' }}>
+                  Không có Annotator hoặc Reviewer nào khả dụng
+                </div>
+              ) : (
+                <>
+                  <div className="form-group">
+                    <label className="form-label">Chọn người thực hiện</label>
+                    <select
+                      className="form-select"
+                      value={assignData.userId}
+                      onChange={e => setAssignData({ ...assignData, userId: e.target.value })}
+                      disabled={assigning || users.length === 0}
+                    >
+                      <option value="">-- Chọn người --</option>
+                      {users.map(user => (
+                        <option key={user.id} value={user.id}>
+                          {user.username} - {user.role}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">Vai trò</label>
+                    <select
+                      className="form-select"
+                      value={assignData.role}
+                      onChange={e => setAssignData({ ...assignData, role: e.target.value })}
+                      disabled={assigning}
+                    >
+                      <option value="Annotator">Annotator (Gán nhãn)</option>
+                      <option value="Reviewer">Reviewer (Duyệt)</option>
+                    </select>
+                  </div>
+                </>
+              )}
             </div>
             <div className="modal-footer">
               <button className="btn btn-secondary" onClick={() => setShowModal(false)} disabled={assigning}>Hủy</button>
-              <button className="btn btn-primary" onClick={handleAssignWork} disabled={assigning}>
+              <button className="btn btn-primary" onClick={handleAssignWork} disabled={assigning || users.length === 0}>
                 {assigning ? 'Đang xử lý...' : 'Phân công'}
               </button>
             </div>
