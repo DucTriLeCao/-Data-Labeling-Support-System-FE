@@ -64,16 +64,27 @@ function TaskAssignment() {
       if (!token) throw new Error('No token');
 
       const response = await getManagerUsersAPI(token);
-      // Handle different response formats
-      let usersData = response.items || response.data || response;
-      let usersList = Array.isArray(usersData) ? usersData : [];
+      console.log('Manager users response:', response);
+      
+      // Handle paginated response format: { items: [...], totalCount, pageNumber, pageSize, totalPages }
+      let usersList = response.items || response.data || response;
+      
+      // Ensure it's an array
+      if (!Array.isArray(usersList)) {
+        usersList = [];
+      }
+      
+      console.log('All users before filter:', usersList);
       
       // Filter to only show active Annotators and Reviewers
-      usersList = usersList.filter(user => 
-        user.status === 'Active' && 
-        (user.role === 'Annotator' || user.role === 'Reviewer')
-      );
+      usersList = usersList.filter(user => {
+        const isActive = user.status === 'Active';
+        const isCorrectRole = user.role === 'Annotator' || user.role === 'Reviewer';
+        console.log(`User ${user.username}: Active=${isActive}, Role=${user.role}, CorrectRole=${isCorrectRole}`);
+        return isActive && isCorrectRole;
+      });
       
+      console.log('Filtered users:', usersList);
       setUsers(usersList);
     } catch (err) {
       console.error('Error fetching users:', err);
