@@ -4,7 +4,7 @@ import { createAnnotationAPI, submitForReviewAPI, getTaskDetailAPI, getAnnotatio
 function AnnotationWorkspace({ task, userId, onBack, retryAnnotationId }) {
   const [selectedLabel, setSelectedLabel] = useState(null);
   const [annotations, setAnnotations] = useState([]);
-  const [activeTool, setActiveTool] = useState('select');
+  const [activeTool, setActiveTool] = useState('bbox');
   const [labels, setLabels] = useState([]);
   const [guidelines, setGuidelines] = useState(null);
   const [saving, setSaving] = useState(false);
@@ -137,8 +137,13 @@ function AnnotationWorkspace({ task, userId, onBack, retryAnnotationId }) {
 
   // Save annotation to backend
   const handleSaveAnnotation = async () => {
-    if (!selectedLabel || annotations.length === 0) {
-      alert('Vui lòng hoàn thành gán nhãn trước khi lưu');
+    if (!selectedLabel) {
+      alert('Vui lòng chọn một nhãn');
+      return;
+    }
+    
+    if (annotations.length === 0) {
+      alert('Bạn chưa vẽ bất kỳ annotation nào. Vui lòng vẽ ít nhất một annotation trước khi lưu.');
       return;
     }
 
@@ -155,8 +160,7 @@ function AnnotationWorkspace({ task, userId, onBack, retryAnnotationId }) {
       const annotationTypeMap = {
         bbox: 'bounding_box',
         polygon: 'polygon',
-        point: 'point',
-        select: 'select'
+        point: 'point'
       };
 
       const annotationData = {
@@ -194,6 +198,11 @@ function AnnotationWorkspace({ task, userId, onBack, retryAnnotationId }) {
 
   // Submit for review
   const handleSubmitForReview = async () => {
+    if (annotations.length === 0) {
+      alert('Bạn chưa vẽ bất kỳ annotation nào. Vui lòng vẽ ít nhất một annotation trước khi gửi duyệt.');
+      return;
+    }
+    
     if (!savedAnnotationId) {
       alert('Vui lòng lưu annotations trước khi gửi duyệt');
       return;
@@ -233,24 +242,6 @@ function AnnotationWorkspace({ task, userId, onBack, retryAnnotationId }) {
   };
 
   const handleMouseDown = (e) => {
-    if (activeTool === 'select') {
-      // Check if clicking on an annotation
-      const pos = getMousePos(e);
-      const clicked = annotations.find(ann => {
-        if (ann.type === 'bbox') {
-          return pos.x >= ann.x && pos.x <= ann.x + ann.width &&
-                 pos.y >= ann.y && pos.y <= ann.y + ann.height;
-        }
-        if (ann.type === 'point') {
-          const distance = Math.sqrt(Math.pow(pos.x - ann.x, 2) + Math.pow(pos.y - ann.y, 2));
-          return distance <= 15; // Click within 15px of point
-        }
-        return false;
-      });
-      setSelectedAnnotation(clicked?.id || null);
-      return;
-    }
-
     if (!selectedLabel) {
       alert('Vui lòng chọn một nhãn trước khi vẽ');
       return;
@@ -371,12 +362,6 @@ function AnnotationWorkspace({ task, userId, onBack, retryAnnotationId }) {
             <h3>{(task.dataContent || task.name || task.dataItem?.content || 'Task').split('/').pop()}</h3>
             <div className="canvas-tools">
               <button 
-                className={`tool-btn ${activeTool === 'select' ? 'active' : ''}`}
-                onClick={() => setActiveTool('select')}
-              >
-                🖱️ Chọn
-              </button>
-              <button 
                 className={`tool-btn ${activeTool === 'bbox' ? 'active' : ''}`}
                 onClick={() => setActiveTool('bbox')}
               >
@@ -419,14 +404,13 @@ function AnnotationWorkspace({ task, userId, onBack, retryAnnotationId }) {
           
           {/* Tool instructions */}
           <div style={{ padding: '8px 12px', background: '#f0fdf4', borderRadius: '6px', marginBottom: '12px', fontSize: '13px', color: '#059669' }}>
-            {activeTool === 'select' && '🖱️ Click vào annotation để chọn'}
             {activeTool === 'bbox' && '⬜ Kéo chuột để vẽ hình chữ nhật'}
             {activeTool === 'polygon' && '🔷 Click để thêm điểm, khi có ≥3 điểm bấm nút "Hoàn thành"'}
             {activeTool === 'point' && '📍 Click để đánh dấu điểm trên đối tượng'}
           </div>
 
           <div 
-            style={{ position: 'relative', overflow: 'hidden', width: '100%', minHeight: '400px', userSelect: 'none' }}
+            style={{ position: 'relative', overflow: 'hidden', width: '100%', height: '600px', userSelect: 'none' }}
           >
             {getImageUrl() ? (
               <img 
@@ -441,7 +425,7 @@ function AnnotationWorkspace({ task, userId, onBack, retryAnnotationId }) {
             
             {/* SVG overlay for annotations */}
             <svg 
-              style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', cursor: activeTool === 'bbox' || activeTool === 'polygon' || activeTool === 'point' ? 'crosshair' : 'default', userSelect: 'none' }}
+              style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', cursor: 'crosshair', userSelect: 'none' }}
               onMouseDown={handleMouseDown}
               onMouseMove={handleMouseMove}
               onMouseUp={handleMouseUp}

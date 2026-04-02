@@ -317,11 +317,11 @@ function ReviewWorkspace({ annotation, userId, onBack }) {
               <span>Người gán nhãn: <strong>{detailData.annotatorName || detailData.AnnotatorName || 'Không xác định'}</strong></span>
             </div>
           </div>
-          <div className="review-canvas-display" ref={canvasRef} style={{ position: 'relative', overflow: 'hidden' }}>
+          <div className="review-canvas-display" ref={canvasRef} style={{ position: 'relative', overflow: 'hidden', height: '600px' }}>
             <img 
               src={getImageUrl()} 
               alt="annotation" 
-              style={{ width: '100%', height: 'auto', display: 'block' }}
+              style={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block' }}
             />
           </div>
         </div>

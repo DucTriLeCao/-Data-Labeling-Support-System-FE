@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { getProjectsAPI, getDatasetsByProjectAPI, assignDatasetAPI, getManagerUsersAPI } from '../../api';
+import { getProjectsAPI, getDatasetsByProjectAPI, assignDatasetAPI, getManagerUsersAPI, getDatasetAssignmentsAPI } from '../../api';
 
 function TaskAssignment() {
   const [projects, setProjects] = useState([]);
@@ -11,6 +11,7 @@ function TaskAssignment() {
   const [selectedDataset, setSelectedDataset] = useState(null);
   const [assigning, setAssigning] = useState(false);
   const [assignData, setAssignData] = useState({ userId: '', role: 'Annotator' });
+  const [assignmentsMap, setAssignmentsMap] = useState({});
 
   useEffect(() => {
     fetchProjects();
@@ -51,11 +52,31 @@ function TaskAssignment() {
 
       const response = await getDatasetsByProjectAPI(projectId, token);
       const datasetsData = response.items || response.data || response;
-      setDatasets(Array.isArray(datasetsData) ? datasetsData : []);
+      const datasetsList = Array.isArray(datasetsData) ? datasetsData : [];
+      setDatasets(datasetsList);
+
+      // Fetch assignments for all datasets
+      fetchAllAssignments(datasetsList, token);
     } catch (err) {
       console.error('Error fetching datasets:', err);
       setDatasets([]);
     }
+  };
+
+  const fetchAllAssignments = async (datasetsList, token) => {
+    const newMap = {};
+    await Promise.all(
+      datasetsList.map(async (dataset) => {
+        try {
+          const response = await getDatasetAssignmentsAPI(dataset.id, token);
+          // Backend returns List<DatasetAssignmentDto> directly, or {items: [...]}
+          newMap[dataset.id] = Array.isArray(response) ? response : (response.items || []);
+        } catch {
+          newMap[dataset.id] = [];
+        }
+      })
+    );
+    setAssignmentsMap(newMap);
   };
 
   const fetchUsers = async () => {
@@ -103,6 +124,12 @@ function TaskAssignment() {
     setShowModal(true);
   };
 
+  const getRoleBadgeStyle = (role) => {
+    if (role === 'Annotator') return { background: '#dbeafe', color: '#1d4ed8', padding: '2px 8px', borderRadius: '12px', fontSize: '12px', fontWeight: '500' };
+    if (role === 'Reviewer') return { background: '#fce7f3', color: '#be185d', padding: '2px 8px', borderRadius: '12px', fontSize: '12px', fontWeight: '500' };
+    return { background: '#f3f4f6', color: '#374151', padding: '2px 8px', borderRadius: '12px', fontSize: '12px', fontWeight: '500' };
+  };
+
   const handleAssignWork = async () => {
     if (!assignData.userId) {
       alert('Vui lòng chọn người thực hiện');
@@ -123,6 +150,9 @@ function TaskAssignment() {
       alert('Đã phân công công việc thành công');
       setShowModal(false);
       setAssigning(false);
+      // Refresh assignments after successful assign
+      const token2 = localStorage.getItem('token');
+      if (token2) fetchAllAssignments(datasets, token2);
     } catch (err) {
       console.error('Error assigning work:', err);
       alert('Lỗi: ' + err.message);
@@ -192,6 +222,7 @@ function TaskAssignment() {
                           <th>Tên bộ dữ liệu</th>
                           <th>Mô tả</th>
                           <th>Trạng thái</th>
+                          <th>Người được phân công</th>
                           <th>Ngày tạo</th>
                           <th>Hành động</th>
                         </tr>
@@ -202,6 +233,7 @@ function TaskAssignment() {
                           const datasetDesc = (dataset.description || '').substring(0, 50);
                           const datasetStatus = dataset.status || 'unknown';
                           const createdDate = (dataset.createdAt || dataset.created_at || '').substring(0, 10) || 'N/A';
+                          const assignments = assignmentsMap[dataset.id] || [];
                           
                           return (
                             <tr key={dataset.id}>
@@ -212,6 +244,20 @@ function TaskAssignment() {
                                 <span className={`status-badge status-${datasetStatus}`}>
                                   {datasetStatus === 'active' ? 'Hoạt động' : datasetStatus === 'assigned' ? 'Đã phân công' : 'Không hoạt động'}
                                 </span>
+                              </td>
+                              <td>
+                                {assignments.length === 0 ? (
+                                  <span style={{ color: '#9ca3af', fontSize: '13px' }}>Chưa phân công</span>
+                                ) : (
+                                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                                    {assignments.map(a => (
+                                      <div key={a.id} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                        <span style={{ fontSize: '13px' }}>{a.username}</span>
+                                        <span style={getRoleBadgeStyle(a.role)}>{a.role}</span>
+                                      </div>
+                                    ))}
+                                  </div>
+                                )}
                               </td>
                               <td>{createdDate}</td>
                               <td>
@@ -244,6 +290,21 @@ function TaskAssignment() {
               <button className="modal-close" onClick={() => setShowModal(false)}>&times;</button>
             </div>
             <div className="modal-body">
+              {/* Current assignments */}
+              {selectedDataset && (assignmentsMap[selectedDataset.id] || []).length > 0 && (
+                <div style={{ marginBottom: '16px', padding: '12px', background: '#f9fafb', borderRadius: '8px', border: '1px solid #e5e7eb' }}>
+                  <div style={{ fontWeight: '600', marginBottom: '8px', fontSize: '14px', color: '#374151' }}>Đã phân công:</div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    {(assignmentsMap[selectedDataset.id] || []).map(a => (
+                      <div key={a.id} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <span style={{ fontSize: '13px' }}>👤 {a.username}</span>
+                        <span style={getRoleBadgeStyle(a.role)}>{a.role}</span>
+                        <span style={{ fontSize: '11px', color: '#9ca3af' }}>{(a.assignedAt || '').substring(0, 10)}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
               {users.length === 0 ? (
                 <div style={{ padding: '20px', textAlign: 'center', color: '#dc2626', background: '#fee2e2', borderRadius: '6px' }}>
                   Không có Annotator hoặc Reviewer nào khả dụng
@@ -255,7 +316,13 @@ function TaskAssignment() {
                     <select
                       className="form-select"
                       value={assignData.userId}
-                      onChange={e => setAssignData({ ...assignData, userId: e.target.value })}
+                      onChange={e => {
+                        const selectedUser = users.find(u => String(u.id) === e.target.value);
+                        setAssignData({
+                          userId: e.target.value,
+                          role: selectedUser ? selectedUser.role : 'Annotator'
+                        });
+                      }}
                       disabled={assigning || users.length === 0}
                     >
                       <option value="">-- Chọn người --</option>
@@ -266,18 +333,14 @@ function TaskAssignment() {
                       ))}
                     </select>
                   </div>
-                  <div className="form-group">
-                    <label className="form-label">Vai trò</label>
-                    <select
-                      className="form-select"
-                      value={assignData.role}
-                      onChange={e => setAssignData({ ...assignData, role: e.target.value })}
-                      disabled={assigning}
-                    >
-                      <option value="Annotator">Annotator (Gán nhãn)</option>
-                      <option value="Reviewer">Reviewer (Duyệt)</option>
-                    </select>
-                  </div>
+                  {assignData.userId && (
+                    <div className="form-group">
+                      <label className="form-label">Vai trò</label>
+                      <div style={{ padding: '8px 12px', background: '#f3f4f6', borderRadius: '6px', fontSize: '14px' }}>
+                        <span style={getRoleBadgeStyle(assignData.role)}>{assignData.role}</span>
+                      </div>
+                    </div>
+                  )}
                 </>
               )}
             </div>

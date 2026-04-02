@@ -35,10 +35,10 @@ function PendingReviews({ userId, onStartReview }) {
       setTotalPages(paginatedData.totalPages || 0);
       
       // Calculate stats based on actual statuses from API
-      const submitted = annotationsData.filter(a => a.annotationStatus === 'Submitted').length;
-      const inProgress = annotationsData.filter(a => a.annotationStatus === 'InProgress').length;
-      const approved = annotationsData.filter(a => a.annotationStatus === 'Approved').length;
-      const rejected = annotationsData.filter(a => a.annotationStatus === 'Rejected').length;
+      const submitted = annotationsData.filter(a => a.annotationStatus?.toLowerCase() === 'submitted').length;
+      const inProgress = annotationsData.filter(a => a.annotationStatus?.toLowerCase() === 'in_progress').length;
+      const approved = annotationsData.filter(a => a.annotationStatus?.toLowerCase() === 'approved').length;
+      const rejected = annotationsData.filter(a => a.annotationStatus?.toLowerCase() === 'rejected').length;
       
       setStats({
         totalPending: submitted + inProgress,
@@ -121,10 +121,10 @@ function PendingReviews({ userId, onStartReview }) {
                       borderRadius: '4px',
                       fontSize: '11px',
                       fontWeight: 'bold',
-                      background: ann.annotationStatus === 'Submitted' ? '#fef3c7' : ann.annotationStatus === 'InProgress' ? '#dbeafe' : ann.annotationStatus === 'Approved' ? '#dcfce7' : '#fee2e2',
-                      color: ann.annotationStatus === 'Submitted' ? '#92400e' : ann.annotationStatus === 'InProgress' ? '#1e40af' : ann.annotationStatus === 'Approved' ? '#166534' : '#991b1b'
+                      background: ann.annotationStatus?.toLowerCase() === 'submitted' ? '#fef3c7' : ann.annotationStatus?.toLowerCase() === 'in_progress' ? '#dbeafe' : ann.annotationStatus?.toLowerCase() === 'approved' ? '#dcfce7' : '#fee2e2',
+                      color: ann.annotationStatus?.toLowerCase() === 'submitted' ? '#92400e' : ann.annotationStatus?.toLowerCase() === 'in_progress' ? '#1e40af' : ann.annotationStatus?.toLowerCase() === 'approved' ? '#166534' : '#991b1b'
                     }}>
-                      {ann.annotationStatus === 'Submitted' ? 'Chờ duyệt' : ann.annotationStatus === 'InProgress' ? 'Đang xử lý' : ann.annotationStatus === 'Approved' ? 'Đã duyệt' : ann.annotationStatus === 'Rejected' ? 'Bị từ chối' : 'Không xác định'}
+                      {ann.annotationStatus?.toLowerCase() === 'submitted' ? 'Chờ duyệt' : ann.annotationStatus?.toLowerCase() === 'in_progress' ? 'Đang xử lý' : ann.annotationStatus?.toLowerCase() === 'approved' ? 'Đã duyệt' : ann.annotationStatus?.toLowerCase() === 'rejected' ? 'Bị từ chối' : 'Không xác định'}
                     </span>
                   </div>
                 </div>

@@ -31,7 +31,7 @@ function MyAnnotations({ userId }) {
   if (annotations.length === 0) {
     return (
       <>
-        <h1>📜 Lịch sử gán nhãn</h1>
+        <h1>Lịch sử gán nhãn</h1>
         <div className="empty-state">
           <div className="empty-icon">📭</div>
           <h3>Chưa có lịch sử</h3>
@@ -43,7 +43,7 @@ function MyAnnotations({ userId }) {
 
   return (
     <>
-      <h1>📜 Lịch sử gán nhãn</h1>
+      <h1>Lịch sử gán nhãn</h1>
       <div className="annotations-table">
         <table>
           <thead>
@@ -82,13 +82,13 @@ function MyAnnotations({ userId }) {
           </div>
           <div style={{ textAlign: 'center', padding: '16px', background: '#f9fafb', borderRadius: '8px' }}>
             <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#059669' }}>
-              {annotations.filter(a => a.annotationStatus === 'Approved').length}
+              {annotations.filter(a => a.annotationStatus?.toLowerCase() === 'approved').length}
             </div>
             <div style={{ fontSize: '14px', color: '#6b7280' }}>Đã duyệt</div>
           </div>
           <div style={{ textAlign: 'center', padding: '16px', background: '#f9fafb', borderRadius: '8px' }}>
             <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#059669' }}>
-              {annotations.filter(a => a.annotationStatus === 'Submitted').length}
+              {annotations.filter(a => a.annotationStatus?.toLowerCase() === 'submitted').length}
             </div>
             <div style={{ fontSize: '14px', color: '#6b7280' }}>Đang chờ duyệt</div>
           </div>

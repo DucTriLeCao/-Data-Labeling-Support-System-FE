@@ -24,8 +24,9 @@ function TaskList({ userId, onStartAnnotation }) {
       // Backend returns: {data: {items: [...], totalCount, pageNumber, pageSize, totalPages}, isSuccess, message}
       const paginatedData = response.data || {};
       const tasksData = paginatedData.items || [];
-      setTasks(Array.isArray(tasksData) ? tasksData : []);
-      setTotalCount(paginatedData.totalCount || 0);
+      const filteredTasks = (Array.isArray(tasksData) ? tasksData : []).filter(task => task.hasAnnotation !== true);
+      setTasks(filteredTasks);
+      setTotalCount(filteredTasks.length);
       setTotalPages(paginatedData.totalPages || 0);
       setError('');
     } catch (err) {

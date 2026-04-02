@@ -47,27 +47,7 @@ export const refreshTokenAPI = async (refreshToken) => {
   return data;
 };
 
-export const forgotPasswordAPI = async (emailOrUsername) => {
-  const response = await fetch(`${API_BASE_URL}/auth/forgot-password`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ emailOrUsername })
-  });
-  const data = await response.json();
-  if (!response.ok) throw new Error(data.message || 'Forgot password request failed');
-  return data;
-};
 
-export const resetPasswordAPI = async (userId, resetToken, newPassword, confirmPassword) => {
-  const response = await fetch(`${API_BASE_URL}/auth/reset-password`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ userId: parseInt(userId), resetToken, newPassword, confirmPassword })
-  });
-  const data = await response.json();
-  if (!response.ok) throw new Error(data.message || 'Reset password failed');
-  return data;
-};
 
 export const changePasswordAPI = async (currentPassword, newPassword, token) => {
   const response = await fetch(`${API_BASE_URL}/auth/change-password`, {
@@ -214,8 +194,12 @@ export const getReviewerHistoryAPI = async (token, pageNumber = 1, pageSize = 20
 
 // ==================== ADMIN ENDPOINTS ====================
 
-export const getUsersAPI = async (token, pageNumber = 1, pageSize = 20) => {
-  const response = await fetch(`${API_BASE_URL}/admin/users?pageNumber=${pageNumber}&pageSize=${pageSize}`, {
+export const getUsersAPI = async (token, pageNumber = 1, pageSize = 20, role = null, status = null) => {
+  let url = `${API_BASE_URL}/admin/users?pageNumber=${pageNumber}&pageSize=${pageSize}`;
+  if (role) url += `&role=${encodeURIComponent(role)}`;
+  if (status) url += `&status=${encodeURIComponent(status)}`;
+  
+  const response = await fetch(url, {
     method: 'GET',
     headers: { 'Authorization': `Bearer ${token}` }
   });
@@ -283,7 +267,11 @@ export const deleteUserAPI = async (id, token) => {
     throw new Error(data.message || 'Failed to delete user');
   }
   
-  // DELETE endpoint returns empty response (soft delete sets status to Inactive)
+  // DELETE endpoint returns 204 NoContent (soft delete sets status to inactive)
+  if (response.status === 204) {
+    return { success: true };
+  }
+  
   try {
     const data = await response.json();
     return data;
@@ -308,16 +296,16 @@ export const bulkDeactivateUsersAPI = async (userIds, token) => {
     throw new Error(data.message || 'Failed to deactivate users');
   }
   
-  try {
-    const data = await response.json();
-    return data;
-  } catch (e) {
-    return { success: true };
-  }
+  const data = await response.json();
+  return data;
 };
 
-export const getActivityLogsAPI = async (token, pageNumber = 1, pageSize = 20) => {
-  const response = await fetch(`${API_BASE_URL}/admin/activity-logs?pageNumber=${pageNumber}&pageSize=${pageSize}`, {
+export const getActivityLogsAPI = async (token, pageNumber = 1, pageSize = 20, userId = null, action = null) => {
+  let url = `${API_BASE_URL}/admin/activity-logs?pageNumber=${pageNumber}&pageSize=${pageSize}`;
+  if (userId) url += `&userId=${userId}`;
+  if (action) url += `&action=${encodeURIComponent(action)}`;
+  
+  const response = await fetch(url, {
     method: 'GET',
     headers: { 'Authorization': `Bearer ${token}` }
   });

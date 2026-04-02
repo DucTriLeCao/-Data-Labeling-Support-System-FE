@@ -63,7 +63,7 @@ function UserManagement() {
       email: '',
       password: '',
       role: 'Annotator',
-      status: 'Active' // Auto-set to Active for new users
+      status: 'Active'
     });
     setFormError('');
     setShowModal(true);
@@ -96,7 +96,7 @@ function UserManagement() {
       // Update user status to inactive (soft delete)
       setUsers(users.map(u => 
         u.id === userId 
-          ? { ...u, status: 'Inactive' }
+          ? { ...u, status: 'inactive' }
           : u
       ));
       setError('');
@@ -115,7 +115,7 @@ function UserManagement() {
   };
 
   const handleToggleAllUsers = () => {
-    const activeUserIds = users.filter(u => u.status === 'Active').map(u => u.id);
+    const activeUserIds = users.filter(u => u.status?.toLowerCase() === 'active').map(u => u.id);
     if (selectedUserIds.length === activeUserIds.length) {
       setSelectedUserIds([]);
     } else {
@@ -142,7 +142,7 @@ function UserManagement() {
       // Update selected users status to inactive
       setUsers(users.map(u => 
         selectedUserIds.includes(u.id)
-          ? { ...u, status: 'Inactive' }
+          ? { ...u, status: 'inactive' }
           : u
       ));
       setSelectedUserIds([]);
@@ -229,8 +229,8 @@ function UserManagement() {
 
         setUsers([...users, {
           ...newUser,
-          role: newUser.role || 'Annotator',
-          status: newUser.status || 'Active'
+          role: newUser.role || 'annotator',
+          status: newUser.status || 'active'
         }]);
       }
 
@@ -315,7 +315,7 @@ function UserManagement() {
               <th style={{ width: '40px' }}>
                 <input
                   type="checkbox"
-                  checked={selectedUserIds.length > 0 && selectedUserIds.length === users.filter(u => u.status === 'Active').length}
+                  checked={selectedUserIds.length > 0 && selectedUserIds.length === users.filter(u => u.status?.toLowerCase() === 'active').length}
                   onChange={handleToggleAllUsers}
                   className="select-all-checkbox"
                 />
@@ -329,7 +329,7 @@ function UserManagement() {
             </tr>
           </thead>
           <tbody>
-            {users.filter(user => user.status === 'Active').map(user => (
+            {users.filter(user => user.status?.toLowerCase() === 'active').map(user => (
               <tr key={user.id}>
                 <td>
                   <input
@@ -352,8 +352,8 @@ function UserManagement() {
                   </span>
                 </td>
                 <td>
-                  <span className={`status-badge ${user.status === 'Active' ? 'active' : 'inactive'}`}>
-                    {user.status === 'Active' ? 'Hoạt động' : 'Không hoạt động'}
+                  <span className={`status-badge ${user.status?.toLowerCase() === 'active' ? 'active' : 'inactive'}`}>
+                    {user.status?.toLowerCase() === 'active' ? 'Hoạt động' : 'Không hoạt động'}
                   </span>
                 </td>
                 <td>{user.createdAt || user.created_at || '-'}</td>
