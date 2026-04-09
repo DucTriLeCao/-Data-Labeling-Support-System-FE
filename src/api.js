@@ -525,9 +525,9 @@ export const updateLabelAPI = async (id, labelData, token) => {
   return data;
 };
 
-// Task Assignment
-export const assignDatasetAPI = async (datasetId, assignmentData, token) => {
-  const response = await fetch(`${API_BASE_URL}/manager/datasets/${datasetId}/assign`, {
+// Task Assignment - Assign Data Items
+export const assignDataItemsAPI = async (assignmentData, token) => {
+  const response = await fetch(`${API_BASE_URL}/manager/data-items/assign`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -543,12 +543,12 @@ export const assignDatasetAPI = async (datasetId, assignmentData, token) => {
     data = JSON.parse(text);
   } catch (err) {
     if (!response.ok) {
-      throw new Error(text || 'Failed to assign dataset');
+      throw new Error(text || 'Failed to assign data items');
     }
     data = { message: text };
   }
   
-  if (!response.ok) throw new Error(data.message || text || 'Failed to assign dataset');
+  if (!response.ok) throw new Error(data.message || text || 'Failed to assign data items');
   return data;
 };
 
@@ -578,15 +578,45 @@ export const getDatasetProgressAPI = async (datasetId, token) => {
   return data;
 };
 
-// Quality Overview
-export const getQualityOverviewAPI = async (projectId, token) => {
-  const response = await fetch(`${API_BASE_URL}/manager/projects/${projectId}/quality-overview`, {
+// Quality Overview APIs
+export const getQualityOverviewByProjectAPI = async (token) => {
+  const response = await fetch(`${API_BASE_URL}/manager/quality-overview/by-project`, {
     method: 'GET',
     headers: { 'Authorization': `Bearer ${token}` }
   });
   const data = await response.json();
-  if (!response.ok) throw new Error(data.message || 'Failed to fetch quality overview');
-  return data;
+  if (!response.ok) throw new Error(data.message || 'Failed to fetch quality by project');
+  return Array.isArray(data) ? data : data.data || [];
+};
+
+export const getQualityOverviewByDatasetAPI = async (token) => {
+  const response = await fetch(`${API_BASE_URL}/manager/quality-overview/by-dataset`, {
+    method: 'GET',
+    headers: { 'Authorization': `Bearer ${token}` }
+  });
+  const data = await response.json();
+  if (!response.ok) throw new Error(data.message || 'Failed to fetch quality by dataset');
+  return Array.isArray(data) ? data : data.data || [];
+};
+
+export const getQualityOverviewByDataItemAPI = async (token) => {
+  const response = await fetch(`${API_BASE_URL}/manager/quality-overview/by-dataitem`, {
+    method: 'GET',
+    headers: { 'Authorization': `Bearer ${token}` }
+  });
+  const data = await response.json();
+  if (!response.ok) throw new Error(data.message || 'Failed to fetch quality by data item');
+  return Array.isArray(data) ? data : data.data || [];
+};
+
+export const getQualityOverviewByAnnotatorAPI = async (token) => {
+  const response = await fetch(`${API_BASE_URL}/manager/quality-overview/by-annotator`, {
+    method: 'GET',
+    headers: { 'Authorization': `Bearer ${token}` }
+  });
+  const data = await response.json();
+  if (!response.ok) throw new Error(data.message || 'Failed to fetch quality by annotator');
+  return Array.isArray(data) ? data : data.data || [];
 };
 
 // Export

@@ -181,26 +181,28 @@ function LabelManagement() {
         </div>
 
           {/* Labels List */}
-          {labels.length === 0 ? (
-            <div className="empty-state">
-              <p>Dự án này chưa có nhãn nào</p>
+          <div className="card">
+            <div className="card-header">
+              <h3>Danh sách nhãn ({labels.length})</h3>
+              <button className="btn btn-primary" onClick={handleCreateLabel}>
+                Tạo nhãn mới
+              </button>
             </div>
-          ) : (
-            <div className="card">
-              <div className="card-header">
-                <h3>Danh sách nhãn ({labels.length})</h3>
-                <button className="btn btn-primary" onClick={handleCreateLabel}>
-                  ➕ Tạo nhãn mới
-                </button>
+          
+            {labels.length === 0 ? (
+              <div className="empty-state">
+                <p>Dự án này chưa có nhãn nào</p>
               </div>
-              {selectedLabels.size > 0 && (
-                <div style={{ padding: '20px', borderBottom: '1px solid #e5e7eb', display: 'flex', gap: '10px' }}>
-                  <button className="btn btn-danger" onClick={handleBulkDeleteLabels}>
-                    🗑️ Xóa ({selectedLabels.size})
-                  </button>
-                </div>
-              )}
-              <table>
+            ) : (
+              <>
+                {selectedLabels.size > 0 && (
+                  <div style={{ padding: '20px', borderBottom: '1px solid #e5e7eb', display: 'flex', gap: '10px' }}>
+                    <button className="btn btn-danger" onClick={handleBulkDeleteLabels}>
+                      Xóa ({selectedLabels.size})
+                    </button>
+                  </div>
+                )}
+                <table>
                 <thead>
                   <tr>
                     <th style={{ width: '40px' }}>
@@ -241,16 +243,17 @@ function LabelManagement() {
                             className="btn btn-danger btn-sm" 
                             onClick={() => handleDeleteLabel(label.id)}
                           >
-                            🗑️ Xóa
+                              Xóa
                           </button>
                         </td>
                       </tr>
                     );
                   })}
                 </tbody>
-              </table>
-            </div>
-          )}
+                </table>
+              </>
+            )}
+          </div>
         </>
 
       {/* Modal for Create/Edit */}

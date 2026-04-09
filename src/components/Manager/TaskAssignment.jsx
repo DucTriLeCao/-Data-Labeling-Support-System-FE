@@ -1,17 +1,22 @@
 import { useState, useEffect } from 'react';
-import { getProjectsAPI, getDatasetsByProjectAPI, assignDatasetAPI, getManagerUsersAPI, getDatasetAssignmentsAPI } from '../../api';
+import { getProjectsAPI, getDatasetsByProjectAPI, getDataItemsAPI, assignDataItemsAPI, getManagerUsersAPI } from '../../api';
+
+const API_BASE_URL = 'https://localhost:7076';
 
 function TaskAssignment() {
   const [projects, setProjects] = useState([]);
   const [datasets, setDatasets] = useState([]);
+  const [dataItems, setDataItems] = useState([]);
   const [users, setUsers] = useState([]);
   const [selectedProjectId, setSelectedProjectId] = useState(null);
+  const [selectedDatasetId, setSelectedDatasetId] = useState(null);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
-  const [selectedDataset, setSelectedDataset] = useState(null);
   const [assigning, setAssigning] = useState(false);
   const [assignData, setAssignData] = useState({ userId: '', role: 'Annotator' });
-  const [assignmentsMap, setAssignmentsMap] = useState({});
+  const [selectedDataItem, setSelectedDataItem] = useState(null);
+  const [error, setError] = useState('');
+  const [assignmentError, setAssignmentError] = useState('');
 
   useEffect(() => {
     fetchProjects();
@@ -23,6 +28,13 @@ function TaskAssignment() {
       fetchDatasets(selectedProjectId);
     }
   }, [selectedProjectId]);
+
+  useEffect(() => {
+    if (selectedDatasetId) {
+      fetchDataItems(selectedDatasetId);
+      setSelectedDataItem(null);
+    }
+  }, [selectedDatasetId]);
 
   const fetchProjects = async () => {
     try {
@@ -54,29 +66,36 @@ function TaskAssignment() {
       const datasetsData = response.items || response.data || response;
       const datasetsList = Array.isArray(datasetsData) ? datasetsData : [];
       setDatasets(datasetsList);
+      setError('');
 
-      // Fetch assignments for all datasets
-      fetchAllAssignments(datasetsList, token);
+      if (datasetsList.length > 0) {
+        setSelectedDatasetId(datasetsList[0].id);
+      } else {
+        setSelectedDatasetId(null);
+        setDataItems([]);
+      }
     } catch (err) {
       console.error('Error fetching datasets:', err);
       setDatasets([]);
+      setSelectedDatasetId(null);
+      setDataItems([]);
     }
   };
 
-  const fetchAllAssignments = async (datasetsList, token) => {
-    const newMap = {};
-    await Promise.all(
-      datasetsList.map(async (dataset) => {
-        try {
-          const response = await getDatasetAssignmentsAPI(dataset.id, token);
-          // Backend returns List<DatasetAssignmentDto> directly, or {items: [...]}
-          newMap[dataset.id] = Array.isArray(response) ? response : (response.items || []);
-        } catch {
-          newMap[dataset.id] = [];
-        }
-      })
-    );
-    setAssignmentsMap(newMap);
+  const fetchDataItems = async (datasetId) => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) throw new Error('No token');
+
+      const response = await getDataItemsAPI(datasetId, token);
+      const itemsData = response.items || response.data || response;
+      const itemsList = Array.isArray(itemsData) ? itemsData : [];
+      setDataItems(itemsList);
+      setError('');
+    } catch (err) {
+      console.error('Error fetching data items:', err);
+      setDataItems([]);
+    }
   };
 
   const fetchUsers = async () => {
@@ -118,10 +137,17 @@ function TaskAssignment() {
     return project ? project.name : 'N/A';
   };
 
-  const handleOpenAssignModal = (dataset) => {
-    setSelectedDataset(dataset);
-    setAssignData({ userId: '', role: 'Annotator' });
-    setShowModal(true);
+  const getDatasetName = (datasetId) => {
+    const dataset = datasets.find(d => d.id === datasetId);
+    return dataset ? dataset.name : 'N/A';
+  };
+
+  const getImageUrl = (contentPath) => {
+    if (!contentPath) return '';
+    if (contentPath.startsWith('http://') || contentPath.startsWith('https://')) {
+      return contentPath;
+    }
+    return `${API_BASE_URL}${contentPath}`;
   };
 
   const getRoleBadgeStyle = (role) => {
@@ -130,32 +156,63 @@ function TaskAssignment() {
     return { background: '#f3f4f6', color: '#374151', padding: '2px 8px', borderRadius: '12px', fontSize: '12px', fontWeight: '500' };
   };
 
+  const handleOpenAssignModal = (dataItem) => {
+    setSelectedDataItem(dataItem);
+    setAssignData({ userId: '', role: 'Annotator' });
+    setShowModal(true);
+    setAssignmentError('');
+  };
+
   const handleAssignWork = async () => {
     if (!assignData.userId) {
-      alert('Vui lòng chọn người thực hiện');
+      setAssignmentError('Vui lòng chọn người thực hiện');
+      return;
+    }
+
+    if (!selectedDataItem) {
+      setAssignmentError('Không có hình ảnh được chọn');
       return;
     }
 
     try {
       setAssigning(true);
+      setAssignmentError('');
       const token = localStorage.getItem('token');
       if (!token) throw new Error('No authentication token');
 
-      // Call API to assign dataset with PascalCase property names for .NET backend
-      const response = await assignDatasetAPI(selectedDataset.id, {
+      // Call API to assign single data item with PascalCase property names for .NET backend
+      const response = await assignDataItemsAPI({
+        DataItemIds: [selectedDataItem.id],
         UserId: parseInt(assignData.userId),
         Role: assignData.role
       }, token);
       
-      alert('Đã phân công công việc thành công');
+      alert(`Đã phân công hình ảnh "${selectedDataItem.name || selectedDataItem.fileName}" thành công`);
       setShowModal(false);
       setAssigning(false);
-      // Refresh assignments after successful assign
-      const token2 = localStorage.getItem('token');
-      if (token2) fetchAllAssignments(datasets, token2);
+      setSelectedDataItem(null);
+      
+      // Refresh data items
+      if (selectedDatasetId) {
+        fetchDataItems(selectedDatasetId);
+      }
     } catch (err) {
       console.error('Error assigning work:', err);
-      alert('Lỗi: ' + err.message);
+      const errorMessage = err.message || 'Lỗi không xác định';
+      
+      // Handle specific error messages
+      if (errorMessage.includes('already been assigned') || errorMessage.includes('đã được phân công')) {
+        setAssignmentError(`Hình ảnh này đã được phân công cho người dùng này rồi.`);
+      } else if (errorMessage.includes('Object reference') || errorMessage.includes('not set to an instance')) {
+        setAssignmentError('Lỗi: Dữ liệu bộ dữ liệu không được tải đúng. Vui lòng tải lại trang và thử lại.');
+        console.error('Backend data loading error:', err);
+      } else if (errorMessage.includes('User not found')) {
+        setAssignmentError('Lỗi: Người dùng không được tìm thấy. Vui lòng chọn người dùng khác.');
+      } else if (errorMessage.includes('Data items not found') || errorMessage.includes('Data item')) {
+        setAssignmentError('Lỗi: Hình ảnh không tồn tại hoặc đã bị xóa.');
+      } else {
+        setAssignmentError(`Lỗi: ${errorMessage}`);
+      }
       setAssigning(false);
     }
   };
@@ -165,8 +222,8 @@ function TaskAssignment() {
   return (
     <div>
       <div className="page-header">
-        <h1>Phân công công việc</h1>
-        <p>Phân công annotator và reviewer cho các bộ dữ liệu</p>
+        <h1>Phân công công việc (Theo hình ảnh)</h1>
+        <p>Phân công annotator và reviewer cho từng hình ảnh</p>
       </div>
 
       {projects.length === 0 ? (
@@ -203,79 +260,127 @@ function TaskAssignment() {
             </div>
           ) : selectedProjectId ? (
             <>
-              {/* Datasets Table */}
-              <div className="card">
+              {/* Dataset Selector */}
+              <div className="card" style={{ marginBottom: '20px' }}>
                 <div className="card-header">
-                  <h3>Danh sách bộ dữ liệu - {getProjectName(selectedProjectId)} ({datasets.length})</h3>
+                  <h3>Chọn bộ dữ liệu</h3>
                 </div>
-
-                {datasets.length === 0 ? (
-                  <div style={{ padding: '20px', textAlign: 'center', color: '#999' }}>
-                    Chưa có bộ dữ liệu nào
-                  </div>
-                ) : (
-                  <div className="table-container">
-                    <table>
-                      <thead>
-                        <tr>
-                          <th>ID</th>
-                          <th>Tên bộ dữ liệu</th>
-                          <th>Mô tả</th>
-                          <th>Trạng thái</th>
-                          <th>Người được phân công</th>
-                          <th>Ngày tạo</th>
-                          <th>Hành động</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {datasets.map(dataset => {
-                          const datasetName = dataset.name || 'N/A';
-                          const datasetDesc = (dataset.description || '').substring(0, 50);
-                          const datasetStatus = dataset.status || 'unknown';
-                          const createdDate = (dataset.createdAt || dataset.created_at || '').substring(0, 10) || 'N/A';
-                          const assignments = assignmentsMap[dataset.id] || [];
-                          
-                          return (
-                            <tr key={dataset.id}>
-                              <td>{dataset.id}</td>
-                              <td><strong>{datasetName}</strong></td>
-                              <td>{datasetDesc || 'N/A'}</td>
-                              <td>
-                                <span className={`status-badge status-${datasetStatus}`}>
-                                  {datasetStatus === 'active' ? 'Hoạt động' : datasetStatus === 'assigned' ? 'Đã phân công' : 'Không hoạt động'}
-                                </span>
-                              </td>
-                              <td>
-                                {assignments.length === 0 ? (
-                                  <span style={{ color: '#9ca3af', fontSize: '13px' }}>Chưa phân công</span>
-                                ) : (
-                                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                                    {assignments.map(a => (
-                                      <div key={a.id} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                        <span style={{ fontSize: '13px' }}>{a.username}</span>
-                                        <span style={getRoleBadgeStyle(a.role)}>{a.role}</span>
-                                      </div>
-                                    ))}
-                                  </div>
-                                )}
-                              </td>
-                              <td>{createdDate}</td>
-                              <td>
-                                <button 
-                                  className="btn btn-success btn-sm" 
-                                  onClick={() => handleOpenAssignModal(dataset)}
-                                >
-                                  👤 Phân công
-                                </button>
-                              </td>
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
+                <div style={{ padding: '20px' }}>
+                  <select 
+                    value={selectedDatasetId || ''} 
+                    onChange={(e) => setSelectedDatasetId(parseInt(e.target.value))}
+                    className="form-select"
+                    style={{ maxWidth: '300px' }}
+                  >
+                    <option value="">-- Chọn bộ dữ liệu --</option>
+                    {datasets.map(dataset => (
+                      <option key={dataset.id} value={dataset.id}>
+                        {dataset.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
               </div>
+
+              {selectedDatasetId && dataItems.length === 0 ? (
+                <div className="empty-state">
+                  <p>Bộ dữ liệu này chưa có mục dữ liệu nào</p>
+                </div>
+              ) : selectedDatasetId ? (
+                <>
+                  {/* Data Items Display */}
+                  <div className="card">
+                    <div className="card-header">
+                      <h3>Danh sách Hình ảnh - {getDatasetName(selectedDatasetId)} ({dataItems.length})</h3>
+                    </div>
+
+                    {error && (
+                      <div style={{ padding: '12px 20px', background: '#fee2e2', color: '#dc2626', borderRadius: '4px', margin: '20px' }}>
+                        {error}
+                      </div>
+                    )}
+
+                    {dataItems.length === 0 ? (
+                      <div style={{ padding: '40px', textAlign: 'center', color: '#999' }}>
+                        Chưa có hình ảnh nào
+                      </div>
+                    ) : (
+                      <div style={{ padding: '20px', display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '20px' }}>
+                        {dataItems.map(item => (
+                          <div 
+                            key={item.id}
+                            style={{
+                              border: '1px solid #e5e7eb',
+                              borderRadius: '8px',
+                              overflow: 'hidden',
+                              display: 'flex',
+                              flexDirection: 'column',
+                              backgroundColor: '#ffffff'
+                            }}
+                          >
+                            {/* Image Preview */}
+                            <div style={{
+                              width: '100%',
+                              height: '180px',
+                              background: '#f3f4f6',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              overflow: 'hidden',
+                              position: 'relative'
+                            }}>
+                              {item.content ? (
+                                <img 
+                                  src={getImageUrl(item.content)} 
+                                  alt={`Hình ảnh ${item.id}`}
+                                  style={{ 
+                                    width: '100%',
+                                    height: '100%',
+                                    objectFit: 'cover',
+                                    cursor: 'pointer'
+                                  }}
+                                  onClick={() => window.open(getImageUrl(item.content), '_blank')}
+                                  onError={(e) => {
+                                    e.target.style.display = 'none';
+                                  }}
+                                />
+                              ) : (
+                                <span style={{ color: '#9ca3af', fontSize: '13px' }}>Không có hình ảnh</span>
+                              )}
+                            </div>
+
+                            {/* Card Details */}
+                            <div style={{ padding: '12px', flex: 1, display: 'flex', flexDirection: 'column' }}>
+                              <div style={{ fontSize: '12px', color: '#6b7280', marginBottom: '6px' }}>ID: {item.id}</div>
+                              <div style={{ 
+                                fontSize: '12px', 
+                                color: '#374151',
+                                marginBottom: '6px',
+                                wordBreak: 'break-word',
+                                flex: 1
+                              }}>
+                                {item.name || item.fileName || 'N/A'}
+                              </div>
+                              <div style={{ marginBottom: '8px' }}>
+                                <span className={`status-badge status-${item.status || 'unknown'}`} style={{ fontSize: '11px' }}>
+                                  {item.status === 'assigned' ? 'Đã phân công' : item.status === 'active' ? 'Chưa phân công' : item.status || 'N/A'}
+                                </span>
+                              </div>
+                              <button 
+                                className="btn btn-success btn-sm" 
+                                onClick={() => handleOpenAssignModal(item)}
+                                style={{ width: '100%' }}
+                              >
+                                Phân công
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </>
+              ) : null}
             </>
           ) : null}
         </>
@@ -286,25 +391,24 @@ function TaskAssignment() {
         <div className="modal-overlay" onClick={() => setShowModal(false)}>
           <div className="modal" onClick={e => e.stopPropagation()}>
             <div className="modal-header">
-              <h3>Phân công - {selectedDataset?.name}</h3>
+              <h3>Phân công: {selectedDataItem?.name || selectedDataItem?.fileName || 'Hình ảnh'}</h3>
               <button className="modal-close" onClick={() => setShowModal(false)}>&times;</button>
             </div>
             <div className="modal-body">
-              {/* Current assignments */}
-              {selectedDataset && (assignmentsMap[selectedDataset.id] || []).length > 0 && (
-                <div style={{ marginBottom: '16px', padding: '12px', background: '#f9fafb', borderRadius: '8px', border: '1px solid #e5e7eb' }}>
-                  <div style={{ fontWeight: '600', marginBottom: '8px', fontSize: '14px', color: '#374151' }}>Đã phân công:</div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                    {(assignmentsMap[selectedDataset.id] || []).map(a => (
-                      <div key={a.id} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <span style={{ fontSize: '13px' }}>👤 {a.username}</span>
-                        <span style={getRoleBadgeStyle(a.role)}>{a.role}</span>
-                        <span style={{ fontSize: '11px', color: '#9ca3af' }}>{(a.assignedAt || '').substring(0, 10)}</span>
-                      </div>
-                    ))}
-                  </div>
+              {assignmentError && (
+                <div style={{
+                  padding: '12px 16px',
+                  background: '#fee2e2',
+                  color: '#dc2626',
+                  borderRadius: '6px',
+                  marginBottom: '16px',
+                  borderLeft: '4px solid #dc2626',
+                  fontSize: '14px'
+                }}>
+                  {assignmentError}
                 </div>
               )}
+
               {users.length === 0 ? (
                 <div style={{ padding: '20px', textAlign: 'center', color: '#dc2626', background: '#fee2e2', borderRadius: '6px' }}>
                   Không có Annotator hoặc Reviewer nào khả dụng
@@ -322,6 +426,7 @@ function TaskAssignment() {
                           userId: e.target.value,
                           role: selectedUser ? selectedUser.role : 'Annotator'
                         });
+                        setAssignmentError('');
                       }}
                       disabled={assigning || users.length === 0}
                     >
@@ -346,7 +451,7 @@ function TaskAssignment() {
             </div>
             <div className="modal-footer">
               <button className="btn btn-secondary" onClick={() => setShowModal(false)} disabled={assigning}>Hủy</button>
-              <button className="btn btn-primary" onClick={handleAssignWork} disabled={assigning || users.length === 0}>
+              <button className="btn btn-primary" onClick={handleAssignWork} disabled={assigning || users.length === 0 || !assignData.userId}>
                 {assigning ? 'Đang xử lý...' : 'Phân công'}
               </button>
             </div>
