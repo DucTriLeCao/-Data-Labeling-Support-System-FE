@@ -1,4 +1,3 @@
-/* ========================= REVIEWER LAYOUT ========================= */
 .reviewer-layout {
   display: flex;
   min-height: 100vh;
@@ -93,7 +92,6 @@
   font-size: 28px;
 }
 
-/* ========================= PENDING REVIEWS ========================= */
 .pending-reviews-container {
   display: flex;
   flex-direction: column;
@@ -165,7 +163,6 @@
   background: #b91c1c;
 }
 
-/* ========================= REVIEW WORKSPACE ========================= */
 .review-workspace {
   display: grid;
   grid-template-columns: 1fr 380px;
@@ -252,7 +249,6 @@
   font-size: 15px;
 }
 
-/* Annotation details in review */
 .annotation-detail-item {
   padding: 12px;
   background: #f9fafb;
@@ -277,7 +273,6 @@
   font-family: monospace;
 }
 
-/* Feedback textarea */
 .feedback-textarea {
   width: 100%;
   min-height: 100px;
@@ -294,7 +289,6 @@
   border-color: #dc2626;
 }
 
-/* Review decision buttons */
 .review-decision {
   display: flex;
   gap: 12px;
@@ -342,7 +336,6 @@
   background: #e5e7eb;
 }
 
-/* ========================= REVIEW HISTORY ========================= */
 .review-history-table {
   width: 100%;
   background: white;
@@ -390,7 +383,6 @@
   color: #991b1b;
 }
 
-/* ========================= STATS CARDS ========================= */
 .reviewer-stats {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
@@ -430,7 +422,6 @@
   color: #dc2626;
 }
 
-/* ========================= EMPTY STATE ========================= */
 .reviewer-empty-state {
   text-align: center;
   padding: 60px 20px;

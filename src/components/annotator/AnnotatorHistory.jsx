@@ -139,9 +139,14 @@ function AnnotatorHistory() {
                       <td style={{ padding: '12px', color: '#1f2937', fontSize: '14px' }}>{item.datasetName}</td>
                       <td style={{ padding: '12px', fontWeight: '500', color: '#6366f1' }}>{item.labelValue}</td>
                       <td style={{ padding: '12px', color: '#6b7280', fontSize: '14px' }}>
-                        {item.annotationType === 'bbox' && '⬜ BBox'}
-                        {item.annotationType === 'polygon' && '🔷 Polygon'}
-                        {item.annotationType === 'point' && '📍 Point'}
+                        {(() => {
+                          const type = item.annotationType || item.AnnotationType || '';
+                          const typeId = type.toLowerCase();
+                          if (typeId === 'bounding_box' || typeId === 'bbox') return '⬜ BBox';
+                          if (typeId === 'polygon') return '🔷 Polygon';
+                          if (typeId === 'point') return '📍 Point';
+                          return type;
+                        })()}
                       </td>
                       <td style={{ padding: '12px' }}>{getStatusBadge(item.status)}</td>
                       <td style={{ padding: '12px', color: '#6b7280', fontSize: '14px' }}>

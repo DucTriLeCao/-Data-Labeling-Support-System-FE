@@ -25,7 +25,6 @@ function App() {
     localStorage.removeItem('user');
   };
 
-  // If logged in, show appropriate dashboard based on role
   if (user) {
     const role = user.role?.toLowerCase();
     if (role === 'admin') {

@@ -93,7 +93,6 @@ function UserManagement() {
 
       await deleteUserAPI(userId, token);
       
-      // Update user status to inactive (soft delete)
       setUsers(users.map(u => 
         u.id === userId 
           ? { ...u, status: 'inactive' }
@@ -139,7 +138,6 @@ function UserManagement() {
 
       await bulkDeactivateUsersAPI(selectedUserIds, token);
       
-      // Update selected users status to inactive
       setUsers(users.map(u => 
         selectedUserIds.includes(u.id)
           ? { ...u, status: 'inactive' }
@@ -188,19 +186,17 @@ function UserManagement() {
       if (!token) throw new Error('No token');
 
       if (editingUser) {
-        // Update existing user - only role and status can be updated
         const updateData = {
           role: formData.role,
           status: formData.status
         };
         
-        // Only include password if it was changed
         if (formData.password) {
           updateData.password = formData.password;
         }
 
         const response = await updateUserAPI(editingUser.id, updateData, token);
-        const updatedUser = response; // API returns user object directly
+        const updatedUser = response;
 
         setUsers(users.map(u => 
           u.id === editingUser.id 
@@ -215,7 +211,6 @@ function UserManagement() {
             : u
         ));
       } else {
-        // Create new user
         const createData = {
           username: formData.username,
           email: formData.email,
@@ -225,7 +220,7 @@ function UserManagement() {
         };
 
         const response = await createUserAPI(createData, token);
-        const newUser = response; // API returns user object directly
+        const newUser = response;
 
         setUsers([...users, {
           ...newUser,
@@ -250,7 +245,6 @@ function UserManagement() {
       'Manager': 'Manager',
       'Annotator': 'Annotator',
       'Reviewer': 'Reviewer',
-      // Fallback for lowercase (in case)
       'admin': 'Admin',
       'manager': 'Manager',
       'annotator': 'Annotator',

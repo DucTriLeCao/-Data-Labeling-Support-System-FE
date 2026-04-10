@@ -10,8 +10,6 @@ function MyAnnotations({ userId }) {
         const token = localStorage.getItem('token');
         if (!token) throw new Error('No authentication token');
         
-        // For now, start with empty annotations
-        // TODO: API endpoint for annotator's completed annotations
         setAnnotations([]);
         setLoading(false);
       } catch (err) {

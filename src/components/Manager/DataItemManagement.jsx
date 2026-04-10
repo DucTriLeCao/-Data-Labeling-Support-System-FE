@@ -82,7 +82,6 @@ function DataItemManagement() {
 
       const response = await getDataItemsAPI(datasetId, token);
       console.log('Data items API response:', response);
-      // Backend returns lowercase camelCase: items, totalCount, pageNumber, pageSize, totalPages
       const itemsList = response.items || [];
       console.log('Extracted data items:', itemsList);
       const sortedItems = Array.isArray(itemsList) ? [...itemsList].sort((a, b) => a.id - b.id) : [];
@@ -112,7 +111,6 @@ function DataItemManagement() {
       setSaving(true);
       const token = localStorage.getItem('token');
       
-      // Create FormData to send file
       const uploadData = new FormData();
       uploadData.append('file', formData.image);
       
@@ -188,11 +186,9 @@ function DataItemManagement() {
 
   const getImageUrl = (contentPath) => {
     if (!contentPath) return '';
-    // If it's already a full URL, return as-is
     if (contentPath.startsWith('http://') || contentPath.startsWith('https://')) {
       return contentPath;
     }
-    // Otherwise, prepend the API base URL
     return `${API_BASE_URL}${contentPath}`;
   };
 

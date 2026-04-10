@@ -21,7 +21,6 @@ function TaskList({ userId, onStartAnnotation }) {
       if (!token) throw new Error('No authentication token');
 
       const response = await getAssignedTasksAPI(token, pageNumber, pageSize);
-      // Backend returns: {data: {items: [...], totalCount, pageNumber, pageSize, totalPages}, isSuccess, message}
       const paginatedData = response.data || {};
       const tasksData = paginatedData.items || [];
       const filteredTasks = (Array.isArray(tasksData) ? tasksData : []).filter(task => task.hasAnnotation !== true);

@@ -22,7 +22,6 @@ function SystemOverview() {
         const token = localStorage.getItem('token');
         if (!token) throw new Error('No authentication token');
 
-        // Fetch users
         const usersResponse = await getUsersAPI(token);
         
         let users = usersResponse.items;
@@ -31,7 +30,6 @@ function SystemOverview() {
           users = [];
         }
 
-        // Calculate user statistics
         const usersByRole = {
           admin: users.filter(u => u.role?.toLowerCase() === 'admin').length,
           manager: users.filter(u => u.role?.toLowerCase() === 'manager').length,
@@ -39,7 +37,6 @@ function SystemOverview() {
           reviewer: users.filter(u => u.role?.toLowerCase() === 'reviewer').length,
         };
 
-        // Fetch projects and calculate statistics
         let totalProjects = 0;
         let totalDatasets = 0;
         let totalDataItems = 0;
@@ -47,14 +44,12 @@ function SystemOverview() {
         const projects = projectsResponse.items || projectsResponse.data || projectsResponse || [];
         totalProjects = projects.length;
 
-        // Fetch datasets and data items for each project
         for (const project of projects) {
           try {
             const datasetsResponse = await getDatasetsByProjectAPI(project.id, token);
             const datasets = datasetsResponse.items || datasetsResponse.data || [];
             totalDatasets += datasets.length;
             
-            // Count data items in each dataset
             for (const dataset of datasets) {
               try {
                 const dataItemsResponse = await getDataItemsAPI(dataset.id, token);
@@ -67,12 +62,10 @@ function SystemOverview() {
           }
         }
 
-        // Fetch submitted annotations (for review statistics)
         const submittedResponse = await getSubmittedQueueAPI(token).catch(() => ({ data: [] }));
         const submittedAnnotations = submittedResponse.data || submittedResponse.items || [];
         const totalAnnotations = submittedAnnotations.length;
 
-        // Fetch activity logs
         const logsResponse = await getActivityLogsAPI(token);
         let logs = logsResponse.items || logsResponse.data || logsResponse || [];
         if (!Array.isArray(logs)) {
@@ -96,7 +89,6 @@ function SystemOverview() {
         
         setStats(newStats);
 
-        // Map activity logs
         const activities = logs.slice(0, 4).map((log, idx) => ({
           id: log.id || idx + 1,
           icon: ['👤', '📝', '✅', '📁'][idx % 4],

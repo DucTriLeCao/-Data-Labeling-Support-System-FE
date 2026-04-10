@@ -1,6 +1,5 @@
 const API_BASE_URL = 'https://localhost:7076/api';
 
-// Handle fetch errors including network failures
 const handleFetchError = async (response, endpoint) => {
   let errorMessage = `Request to ${endpoint} failed`;
   
@@ -14,7 +13,6 @@ const handleFetchError = async (response, endpoint) => {
   throw new Error(errorMessage);
 };
 
-// ==================== AUTH ENDPOINTS ====================
 
 export const loginAPI = async (email, password) => {
   try {
@@ -63,7 +61,6 @@ export const changePasswordAPI = async (currentPassword, newPassword, token) => 
   return data;
 };
 
-// ==================== ANNOTATOR ENDPOINTS ====================
 
 export const getAssignedTasksAPI = async (token, pageNumber = 1, pageSize = 20) => {
   const response = await fetch(`${API_BASE_URL}/annotator/assigned-tasks?pageNumber=${pageNumber}&pageSize=${pageSize}`, {
@@ -142,7 +139,6 @@ export const getAnnotatorHistoryAPI = async (token, pageNumber = 1, pageSize = 2
   return data;
 };
 
-// ==================== REVIEWER ENDPOINTS ====================
 
 export const getSubmittedQueueAPI = async (token, pageNumber = 1, pageSize = 20) => {
   const response = await fetch(`${API_BASE_URL}/reviewer/submitted-queue?pageNumber=${pageNumber}&pageSize=${pageSize}`, {
@@ -192,7 +188,6 @@ export const getReviewerHistoryAPI = async (token, pageNumber = 1, pageSize = 20
   return data;
 };
 
-// ==================== ADMIN ENDPOINTS ====================
 
 export const getUsersAPI = async (token, pageNumber = 1, pageSize = 20, role = null, status = null) => {
   let url = `${API_BASE_URL}/admin/users?pageNumber=${pageNumber}&pageSize=${pageSize}`;
@@ -267,7 +262,6 @@ export const deleteUserAPI = async (id, token) => {
     throw new Error(data.message || 'Failed to delete user');
   }
   
-  // DELETE endpoint returns 204 NoContent (soft delete sets status to inactive)
   if (response.status === 204) {
     return { success: true };
   }
@@ -314,9 +308,7 @@ export const getActivityLogsAPI = async (token, pageNumber = 1, pageSize = 20, u
   return data;
 };
 
-// ==================== MANAGER ENDPOINTS ====================
 
-// Projects
 export const getProjectsAPI = async (token, pageNumber = 1, pageSize = 20, searchTerm = '', status = '') => {
   let url = `${API_BASE_URL}/manager/projects?pageNumber=${pageNumber}&pageSize=${pageSize}`;
   if (searchTerm) url += `&searchTerm=${encodeURIComponent(searchTerm)}`;
@@ -368,7 +360,6 @@ export const updateProjectAPI = async (id, projectData, token) => {
   return data;
 };
 
-// Datasets
 export const getDatasetsByProjectAPI = async (projectId, token, pageNumber = 1, pageSize = 20, searchTerm = '', status = '') => {
   let url = `${API_BASE_URL}/manager/datasets?projectId=${projectId}&pageNumber=${pageNumber}&pageSize=${pageSize}`;
   if (searchTerm) url += `&searchTerm=${encodeURIComponent(searchTerm)}`;
@@ -420,7 +411,6 @@ export const updateDatasetAPI = async (id, datasetData, token) => {
   return data;
 };
 
-// Data Items
 export const getDataItemsAPI = async (datasetId, token, pageNumber = 1, pageSize = 20, searchTerm = '', status = '') => {
   let url = `${API_BASE_URL}/manager/data-items?datasetId=${datasetId}&pageNumber=${pageNumber}&pageSize=${pageSize}`;
   if (searchTerm) url += `&searchTerm=${encodeURIComponent(searchTerm)}`;
@@ -435,14 +425,12 @@ export const getDataItemsAPI = async (datasetId, token, pageNumber = 1, pageSize
 };
 
 export const createDataItemAPI = async (datasetId, itemData, token) => {
-  // itemData should be FormData for file uploads
   const isFormData = itemData instanceof FormData;
   
   const response = await fetch(`${API_BASE_URL}/manager/datasets/${datasetId}/items`, {
     method: 'POST',
     headers: isFormData ? {
       'Authorization': `Bearer ${token}`
-      // Don't set Content-Type for FormData - let browser set it with boundary
     } : {
       'Content-Type': 'application/json',
       'Authorization': `Bearer ${token}`
@@ -475,7 +463,6 @@ export const getDataItemByIdAPI = async (id, token) => {
   return data;
 };
 
-// Labels
 export const getLabelsByProjectAPI = async (projectId, token, pageNumber = 1, pageSize = 20) => {
   const url = `${API_BASE_URL}/manager/projects/${projectId}/labels?pageNumber=${pageNumber}&pageSize=${pageSize}`;
   const response = await fetch(url, {
@@ -525,7 +512,6 @@ export const updateLabelAPI = async (id, labelData, token) => {
   return data;
 };
 
-// Task Assignment - Assign Data Items
 export const assignDataItemsAPI = async (assignmentData, token) => {
   const response = await fetch(`${API_BASE_URL}/manager/data-items/assign`, {
     method: 'POST',
@@ -562,12 +548,10 @@ export const getDatasetAssignmentsAPI = async (datasetId, token) => {
     if (!response.ok) throw new Error(data.message || 'Failed to fetch assignments');
     return data;
   } catch (err) {
-    // Fallback: return empty if endpoint doesn't exist
     return { items: [] };
   }
 };
 
-// Dataset Progress
 export const getDatasetProgressAPI = async (datasetId, token) => {
   const response = await fetch(`${API_BASE_URL}/manager/datasets/${datasetId}/progress`, {
     method: 'GET',
@@ -578,7 +562,6 @@ export const getDatasetProgressAPI = async (datasetId, token) => {
   return data;
 };
 
-// Quality Overview APIs
 export const getQualityOverviewByProjectAPI = async (token) => {
   const response = await fetch(`${API_BASE_URL}/manager/quality-overview/by-project`, {
     method: 'GET',
@@ -619,7 +602,6 @@ export const getQualityOverviewByAnnotatorAPI = async (token) => {
   return Array.isArray(data) ? data : data.data || [];
 };
 
-// Export
 export const exportProjectAPI = async (projectId, exportData, token) => {
   const response = await fetch(`${API_BASE_URL}/manager/projects/${projectId}/export`, {
     method: 'POST',
@@ -644,9 +626,7 @@ export const getExportJobsAPI = async (projectId, token) => {
   return data;
 };
 
-// ==================== DELETE ENDPOINTS ====================
 
-// Projects - Single Delete
 export const deleteProjectAPI = async (projectId, token) => {
   const response = await fetch(`${API_BASE_URL}/manager/projects/${projectId}`, {
     method: 'DELETE',
@@ -658,7 +638,6 @@ export const deleteProjectAPI = async (projectId, token) => {
   return data;
 };
 
-// Projects - Bulk Delete
 export const bulkDeleteProjectsAPI = async (projectIds, token) => {
   const response = await fetch(`${API_BASE_URL}/manager/projects/bulk`, {
     method: 'DELETE',
@@ -673,7 +652,6 @@ export const bulkDeleteProjectsAPI = async (projectIds, token) => {
   return data;
 };
 
-// Datasets - Single Delete
 export const deleteDatasetAPI = async (datasetId, token) => {
   const response = await fetch(`${API_BASE_URL}/manager/datasets/${datasetId}`, {
     method: 'DELETE',
@@ -685,7 +663,6 @@ export const deleteDatasetAPI = async (datasetId, token) => {
   return data;
 };
 
-// Datasets - Bulk Delete
 export const bulkDeleteDatasetsAPI = async (datasetIds, token) => {
   const response = await fetch(`${API_BASE_URL}/manager/datasets/bulk`, {
     method: 'DELETE',
@@ -700,7 +677,6 @@ export const bulkDeleteDatasetsAPI = async (datasetIds, token) => {
   return data;
 };
 
-// Data Items - Single Delete
 export const deleteDataItemAPI = async (dataItemId, token) => {
   const response = await fetch(`${API_BASE_URL}/manager/data-items/${dataItemId}`, {
     method: 'DELETE',
@@ -712,7 +688,6 @@ export const deleteDataItemAPI = async (dataItemId, token) => {
   return data;
 };
 
-// Data Items - Bulk Delete
 export const bulkDeleteDataItemsAPI = async (dataItemIds, token) => {
   const response = await fetch(`${API_BASE_URL}/manager/data-items/bulk`, {
     method: 'DELETE',
@@ -727,7 +702,6 @@ export const bulkDeleteDataItemsAPI = async (dataItemIds, token) => {
   return data;
 };
 
-// Labels - Single Delete
 export const deleteLabelAPI = async (labelId, token) => {
   const response = await fetch(`${API_BASE_URL}/manager/labels/${labelId}`, {
     method: 'DELETE',
@@ -739,7 +713,6 @@ export const deleteLabelAPI = async (labelId, token) => {
   return data;
 };
 
-// Labels - Bulk Delete
 export const bulkDeleteLabelsAPI = async (labelIds, token) => {
   const response = await fetch(`${API_BASE_URL}/manager/labels/bulk`, {
     method: 'DELETE',

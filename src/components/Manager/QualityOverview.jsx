@@ -10,7 +10,6 @@ function QualityOverview() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  // Fetch all quality data on mount
   useEffect(() => {
     fetchAllQualityData();
   }, []);
@@ -21,7 +20,6 @@ function QualityOverview() {
       const token = localStorage.getItem('token');
       if (!token) throw new Error('No authentication token');
       
-      // Fetch all 4 quality overview APIs
       const [projectRes, datasetRes, dataItemRes, annotatorRes] = await Promise.all([
         getQualityOverviewByProjectAPI(token),
         getQualityOverviewByDatasetAPI(token),

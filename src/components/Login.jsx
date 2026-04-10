@@ -17,7 +17,6 @@ function Login({ onLoginSuccess }) {
     try {
       const response = await loginAPI(email, password);
       
-      // Store token in localStorage
       if (response.data?.accessToken) {
         localStorage.setItem('token', response.data.accessToken);
         if (response.data.refreshToken) {
@@ -25,17 +24,14 @@ function Login({ onLoginSuccess }) {
         }
       }
       
-      // Extract user from nested data structure
       const user = response.data?.user;
       
-      // Validate that user has required fields
       if (!user || !user.role) {
         setError('Lỗi: Không thể xác định vai trò người dùng. Vui lòng thử lại.');
         setLoading(false);
         return;
       }
       
-      // Normalize role to lowercase (API returns capitalized: "Admin" -> "admin")
       const normalizedUser = {
         ...user,
         role: user.role.toLowerCase()

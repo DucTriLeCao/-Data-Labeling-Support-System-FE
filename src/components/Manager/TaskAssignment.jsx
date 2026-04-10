@@ -106,17 +106,14 @@ function TaskAssignment() {
       const response = await getManagerUsersAPI(token);
       console.log('Manager users response:', response);
       
-      // Handle paginated response format: { items: [...], totalCount, pageNumber, pageSize, totalPages }
       let usersList = response.items || response.data || response;
       
-      // Ensure it's an array
       if (!Array.isArray(usersList)) {
         usersList = [];
       }
       
       console.log('All users before filter:', usersList);
       
-      // Filter to only show active Annotators and Reviewers
       usersList = usersList.filter(user => {
         const isActive = user.status === 'Active';
         const isCorrectRole = user.role === 'Annotator' || user.role === 'Reviewer';
@@ -180,7 +177,6 @@ function TaskAssignment() {
       const token = localStorage.getItem('token');
       if (!token) throw new Error('No authentication token');
 
-      // Call API to assign single data item with PascalCase property names for .NET backend
       const response = await assignDataItemsAPI({
         DataItemIds: [selectedDataItem.id],
         UserId: parseInt(assignData.userId),
@@ -192,7 +188,6 @@ function TaskAssignment() {
       setAssigning(false);
       setSelectedDataItem(null);
       
-      // Refresh data items
       if (selectedDatasetId) {
         fetchDataItems(selectedDatasetId);
       }
@@ -200,7 +195,6 @@ function TaskAssignment() {
       console.error('Error assigning work:', err);
       const errorMessage = err.message || 'Lỗi không xác định';
       
-      // Handle specific error messages
       if (errorMessage.includes('already been assigned') || errorMessage.includes('đã được phân công')) {
         setAssignmentError(`Hình ảnh này đã được phân công cho người dùng này rồi.`);
       } else if (errorMessage.includes('Object reference') || errorMessage.includes('not set to an instance')) {

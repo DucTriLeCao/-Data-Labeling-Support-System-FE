@@ -90,7 +90,6 @@
   box-sizing: border-box;
 }
 
-/* Hide browser's native password reveal button */
 .form-input::-ms-reveal,
 .form-input::-ms-clear {
   display: none;

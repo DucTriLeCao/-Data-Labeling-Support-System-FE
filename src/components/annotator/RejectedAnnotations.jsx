@@ -14,32 +14,26 @@ function RejectedAnnotations({ userId, onRetry }) {
         const token = localStorage.getItem('token');
         if (!token) throw new Error('No authentication token');
         
-        // Get all assigned tasks
         const tasksResponse = await getAssignedTasksAPI(token);
         const tasks = (tasksResponse.data?.items) || [];
         console.log('Fetched tasks:', tasks.length);
         
-        // Fetch feedback for each task
         const rejectedList = [];
         for (const task of tasks) {
           try {
-            // First get task detail to get annotation ID
             const taskDetail = await getTaskDetailAPI(task.dataItemAssignmentId, token);
             const annotation = taskDetail.data || taskDetail;
             const annotationId = annotation.currentAnnotation?.annotationId;
             
             if (annotationId) {
               try {
-                // Get feedback for this annotation
                 const feedbackResponse = await getAnnotationFeedbackAPI(annotationId, token);
                 const data = feedbackResponse.data || feedbackResponse;
                 console.log('Feedback for annotation', annotationId, ':', data);
                 
-                // Check if has rejected feedbacks
                 if (data.feedbacks && data.feedbacks.length > 0) {
                   const hasRejected = data.feedbacks.some(f => f.reviewStatus && f.reviewStatus.toLowerCase() === 'rejected');
                   if (hasRejected) {
-                    // Store task info in the data for retry
                     data._task = task;
                     rejectedList.push(data);
                   }

@@ -36,7 +36,6 @@ function DataItemSearchSelect({ datasetId, value, onChange, disabled = false }) 
 
       const response = await getDataItemsAPI(datasetId, token, pageNumber, 20, search);
       console.log('Data items API response:', response);
-      // Backend returns lowercase camelCase: items, totalCount, pageNumber, pageSize, totalPages
       const itemsList = response.items || [];
       console.log('Extracted data items:', itemsList);
       setDataItems(Array.isArray(itemsList) ? itemsList : []);

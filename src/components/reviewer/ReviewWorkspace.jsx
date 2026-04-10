@@ -1,5 +1,6 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { getReviewDetailAPI, submitDecisionAPI } from '../../api';
+import KonvaReviewCanvas from './KonvaReviewCanvas';
 
 function ReviewWorkspace({ annotation, userId, onBack }) {
   const [comment, setComment] = useState('');
@@ -7,7 +8,6 @@ function ReviewWorkspace({ annotation, userId, onBack }) {
   const [detailData, setDetailData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
-  const canvasRef = useRef(null);
 
   const ERROR_CATEGORY_OPTIONS = [
     { id: 'wrong_label', label: '❌ Nhãn sai', description: 'Label không chính xác' },
@@ -26,130 +26,6 @@ function ReviewWorkspace({ annotation, userId, onBack }) {
         : [...prev, categoryId]
     );
   };
-
-  const drawAnnotations = useCallback(() => {
-    if (!canvasRef.current || !detailData) {
-      return;
-    }
-    
-    try {
-      let coordData;
-      if (typeof detailData.coordinateData === 'string') {
-        coordData = JSON.parse(detailData.coordinateData);
-      } else {
-        coordData = detailData.coordinateData;
-      }
-      
-      // Handle both wrapped and unwrapped formats
-      let annotations;
-      if (coordData.annotations) {
-        annotations = coordData.annotations;
-      } else if (Array.isArray(coordData)) {
-        annotations = coordData;
-      } else {
-        annotations = [coordData];
-      }
-      
-      const canvas = canvasRef.current;
-      
-      let svg = canvas.querySelector('svg');
-      if (!svg) {
-        svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-        svg.setAttribute('style', 'position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none;');
-        // Remove viewBox to use actual pixel coordinates like AnnotationWorkspace
-        canvas.appendChild(svg);
-      }
-      
-      // Clear existing
-      while (svg.firstChild) svg.removeChild(svg.firstChild);
-      
-      annotations.forEach((ann) => {
-        if (ann.type === 'bbox' || ann.type === 'bounding_box') {
-          const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-          rect.setAttribute('x', String(ann.x));
-          rect.setAttribute('y', String(ann.y));
-          rect.setAttribute('width', String(ann.width));
-          rect.setAttribute('height', String(ann.height));
-          rect.setAttribute('fill', 'rgba(5, 150, 105, 0.15)');
-          rect.setAttribute('stroke', '#059669');
-          rect.setAttribute('stroke-width', '2');
-          svg.appendChild(rect);
-          
-          const labelText = ann.label_name || ann.labelName || 'Label';
-          const bg = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-          bg.setAttribute('x', String(ann.x));
-          bg.setAttribute('y', String(ann.y - 20));
-          bg.setAttribute('width', String((labelText.length || 10) * 8 + 12));
-          bg.setAttribute('height', '18');
-          bg.setAttribute('fill', '#059669');
-          bg.setAttribute('rx', '4');
-          svg.appendChild(bg);
-          
-          const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-          text.setAttribute('x', String(ann.x + 6));
-          text.setAttribute('y', String(ann.y - 6));
-          text.setAttribute('fill', 'white');
-          text.setAttribute('font-size', '11');
-          text.textContent = labelText;
-          svg.appendChild(text);
-        } else if (ann.type === 'polygon' && ann.points) {
-          const points = ann.points.map(p => `${p.x},${p.y}`).join(' ');
-          const poly = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
-          poly.setAttribute('points', points);
-          poly.setAttribute('fill', 'rgba(139, 92, 246, 0.15)');
-          poly.setAttribute('stroke', '#8b5cf6');
-          poly.setAttribute('stroke-width', '2');
-          svg.appendChild(poly);
-          
-          // Add label at first point
-          if (ann.points.length > 0) {
-            const labelText = ann.label_name || ann.labelName || 'Label';
-            const bg = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-            bg.setAttribute('x', String(ann.points[0].x));
-            bg.setAttribute('y', String(ann.points[0].y - 20));
-            bg.setAttribute('width', String((labelText.length || 10) * 8 + 12));
-            bg.setAttribute('height', '18');
-            bg.setAttribute('fill', '#8b5cf6');
-            bg.setAttribute('rx', '4');
-            svg.appendChild(bg);
-            
-            const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-            text.setAttribute('x', String(ann.points[0].x + 6));
-            text.setAttribute('y', String(ann.points[0].y - 6));
-            text.setAttribute('fill', 'white');
-            text.setAttribute('font-size', '11');
-            text.textContent = labelText;
-            svg.appendChild(text);
-          }
-        } else if (ann.type === 'point') {
-          const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-          circle.setAttribute('cx', String(ann.x));
-          circle.setAttribute('cy', String(ann.y));
-          circle.setAttribute('r', '5');
-          circle.setAttribute('fill', 'rgba(5, 150, 105, 0.3)');
-          circle.setAttribute('stroke', '#059669');
-          circle.setAttribute('stroke-width', '2');
-          svg.appendChild(circle);
-          
-          const labelText = ann.label_name || ann.labelName || 'Point';
-          const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-          text.setAttribute('x', String(parseFloat(ann.x) + 10));
-          text.setAttribute('y', String(parseFloat(ann.y) - 10));
-          text.setAttribute('fill', '#059669');
-          text.setAttribute('font-size', '12');
-          text.setAttribute('font-weight', 'bold');
-          text.textContent = labelText;
-          svg.appendChild(text);
-        }
-      });
-      
-      if (!canvas.contains(svg)) {
-        canvas.appendChild(svg);
-      }
-    } catch (err) {
-      console.error('Error drawing annotations:', err);
-    }
-  }, [detailData]);
 
   useEffect(() => {
     if (!annotation?.annotationId) return;
@@ -172,12 +48,6 @@ function ReviewWorkspace({ annotation, userId, onBack }) {
     
     loadReviewDetail();
   }, [annotation?.annotationId]);
-
-  useEffect(() => {
-    if (detailData?.coordinateData) {
-      drawAnnotations();
-    }
-  }, [detailData, drawAnnotations]);
 
   const getImageUrl = () => {
     if (detailData?.dataContent || detailData?.DataContent) {
@@ -317,13 +187,13 @@ function ReviewWorkspace({ annotation, userId, onBack }) {
               <span>Người gán nhãn: <strong>{detailData.annotatorName || detailData.AnnotatorName || 'Không xác định'}</strong></span>
             </div>
           </div>
-          <div className="review-canvas-display" ref={canvasRef} style={{ position: 'relative', overflow: 'hidden', height: '600px' }}>
-            <img 
-              src={getImageUrl()} 
-              alt="annotation" 
-              style={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block' }}
-            />
-          </div>
+          
+          {/* Konva Canvas for displaying annotations */}
+          <KonvaReviewCanvas
+            imageUrl={getImageUrl()}
+            annotations={detailData?.coordinateData}
+            containerHeight={600}
+          />
         </div>
 
         <div className="review-panel">

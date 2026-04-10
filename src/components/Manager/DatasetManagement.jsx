@@ -22,9 +22,10 @@ function DatasetManagement() {
         if (!token) return;
         const response = await getProjectsAPI(token, 1, 20, '');
         // Backend returns PagedResult with PascalCase: Items, TotalCount, PageNumber, PageSize
-        const projects = response.Items || response.data?.Items || response.items || [];
-        if (projects.length > 0) {
-          setSelectedProjectId(projects[0].id);
+        const projectsList = response.Items || response.data?.Items || response.items || [];
+        setProjects(projectsList);
+        if (projectsList.length > 0) {
+          setSelectedProjectId(projectsList[0].id);
         }
       } catch (err) {
         console.error('Error auto-loading projects:', err);
@@ -292,17 +293,9 @@ function DatasetManagement() {
               {!editingDataset && (
                 <div className="form-group">
                   <label className="form-label">Dự án</label>
-                  <select
-                    className="form-select"
-                    value={formData.projectId}
-                    onChange={e => setFormData({ ...formData, projectId: e.target.value })}
-                    disabled={saving}
-                  >
-                    <option value="">-- Chọn dự án --</option>
-                    {projects.map(p => (
-                      <option key={p.id} value={p.id}>{p.name}</option>
-                    ))}
-                  </select>
+                  <div className="form-input" style={{ background: '#f3f4f6', cursor: 'default' }}>
+                    {projects.find(p => p.id === formData.projectId)?.name || 'N/A'}
+                  </div>
                 </div>
               )}
               <div className="form-group">
