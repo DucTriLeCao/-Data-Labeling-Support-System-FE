@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { getQualityOverviewByProjectAPI, getQualityOverviewByDatasetAPI, getQualityOverviewByDataItemAPI, getQualityOverviewByAnnotatorAPI } from '../../api';
 
+const API_BASE_URL = 'https://localhost:7076';
+
 function QualityOverview() {
   const [activeTab, setActiveTab] = useState('project');
   const [projectData, setProjectData] = useState([]);
@@ -42,6 +44,14 @@ function QualityOverview() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const getImageUrl = (contentPath) => {
+    if (!contentPath) return '';
+    if (contentPath.startsWith('http://') || contentPath.startsWith('https://')) {
+      return contentPath;
+    }
+    return `${API_BASE_URL}${contentPath}`;
   };
 
   if (loading) return <div className="loading">Đang tải dữ liệu...</div>;
@@ -251,7 +261,7 @@ function QualityOverview() {
               <table>
                 <thead>
                   <tr>
-                    <th>Tên mục dữ liệu</th>
+                    <th>Hình ảnh</th>
                     <th>Bộ dữ liệu</th>
                     <th>Tổng đánh giá</th>
                     <th>Phê duyệt</th>
@@ -268,7 +278,22 @@ function QualityOverview() {
                     
                     return (
                       <tr key={di.dataItemId}>
-                        <td>{di.dataItemContent || 'N/A'}</td>
+                        <td>
+                          {di.dataItemContent ? (
+                            <img 
+                              src={getImageUrl(di.dataItemContent)} 
+                              alt={`Data item ${di.dataItemId}`}
+                              style={{ maxWidth: '100px', maxHeight: '100px', cursor: 'pointer', borderRadius: '4px' }}
+                              onClick={() => window.open(getImageUrl(di.dataItemContent), '_blank')}
+                              onError={(e) => {
+                                console.error('Image load error for:', di.dataItemContent);
+                                e.target.style.display = 'none';
+                              }}
+                            />
+                          ) : (
+                            <span style={{ color: '#999' }}>Không có hình ảnh</span>
+                          )}
+                        </td>
                         <td>{di.datasetName || 'N/A'}</td>
                         <td>{total}</td>
                         <td><span style={{ color: '#059669', fontWeight: '500' }}>{approved}</span></td>
